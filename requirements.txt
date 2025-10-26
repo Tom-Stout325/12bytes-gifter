@@ -1,0 +1,29 @@
+# Core Django stack
+Django>=5.0,<6.0
+gunicorn
+dj-database-url
+psycopg2-binary
+
+# Environment and configuration
+django-environ
+whitenoise
+
+# Authentication and user management
+django-allauth        # Handles registration, login, password reset (optional but highly recommended)
+
+# Frontend forms and UI
+django-crispy-forms
+crispy-bootstrap5
+pillow           
+
+# File storage (S3 media uploads)
+django-storages
+boto3
+
+# Optional utilities
+django-formtools      # Multi-step forms (keep if you’ll have wizards or multi-page workflows)
+django-redis          
+redis
+
+# PDF generation
+weasyprint==59.0
