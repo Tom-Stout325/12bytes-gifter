@@ -44,9 +44,11 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
-    "django_crispy_forms",
+    "crispy_forms",
     "crispy_bootstrap5",
+    "bootstrap5",
     "storages", 
+
 
     "accounts",
     "gifter",
@@ -193,3 +195,8 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@gifter.local")
 # Default Primary Key Field
 # -----------------------------------------------------------------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+LOGIN_REDIRECT_URL = "gifter:home"
+LOGOUT_REDIRECT_URL = "gifter:home"
+LOGIN_URL = "accounts:login"
