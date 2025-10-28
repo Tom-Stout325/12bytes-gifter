@@ -79,10 +79,11 @@
 
           <!-- Edit My Profile -->
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'accounts:profile_setup' %}">
+            <a class="nav-link" href="{% url 'accounts:profile_edit' %}">
               <i class="fa-solid fa-pen-to-square me-1"></i> Edit Profile
             </a>
           </li>
+
 
         {% else %}
           <!-- Pending approval view only -->
@@ -106,12 +107,13 @@
             class="badge bg-emphasis text-dark fw-semibold"
             style="font-size: 0.8rem">
             {{ user.first_name }}
-            {% if user.last_name %} {{ user.last_name }}
-            {%endif %} 
-            {% if p.role %} · {{ p.role }}
+            {% if user.last_name %} {{ user.last_name }}{% endif %}
+            {% if p.role == "Parent" %}
+              · {{ p.role }}
             {% endif %}
           </span>
         </li>
+
 
         <!-- Logout -->
         <li class="nav-item ms-lg-3">

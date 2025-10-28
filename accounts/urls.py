@@ -12,11 +12,12 @@ urlpatterns = [
 
     # Onboarding / approval status
     path("setup/", views.profile_setup, name="profile_setup"),
+    path("edit/", views.profile_edit, name="profile_edit"),
     path("pending/", views.pending_approval, name="pending_approval"),
 
     # Profiles
     path("profile/<str:username>/", views.profile_detail, name="profile_detail"),
-    path("profiles/", views.profile_list, name="profile_list"),  # 👈 NEW
+    path("profiles/", views.profile_list, name="profile_list"),
 
     # Password change (logged-in users)
     path("password/change/", auth_views.PasswordChangeView.as_view(

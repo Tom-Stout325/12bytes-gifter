@@ -5,10 +5,6 @@ from accounts.models import Profile
 
 
 class WishlistItem(models.Model):
-    """
-    A single gift idea that belongs to a user's profile.
-    Example: "AirPods Pro", "Lego Millennium Falcon", "Nike hoodie size M"
-    """
 
     profile = models.ForeignKey(
         Profile,

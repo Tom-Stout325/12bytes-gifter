@@ -1,0 +1,395 @@
+{% extends "index.html" %}
+{% block title %}Edit Profile | Gifter{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 700px;">
+  <h2 class="text-secondary mb-3 text-center">Edit Your Profile</h2>
+  <p class="text-muted text-center mb-4">
+    Update your info and avatar so your family can pick the perfect gifts for you.
+  </p>
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <!-- Household Info -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Household</div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Family / Household</label>
+          {{ form.family }}
+          {{ form.family.errors }}
+        </div>
+
+        <div class="mb-0">
+          <label class="form-label">Role</label>
+          {{ form.role }}
+          {{ form.role.errors }}
+          <div class="form-text">
+            Parents can manage family profiles.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Avatar -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+        <span>Avatar</span>
+        <span class="text-muted small">This is how you'll appear</span>
+      </div>
+
+      <div class="card-body">
+
+        <!-- Live avatar preview / status -->
+        <div class="d-flex align-items-center mb-3">
+          <img id="activeAvatarPreviewImg"
+               src="{{ form.instance.get_avatar_url }}"
+               alt="Current avatar"
+               class="rounded-circle border me-3"
+               style="width:60px;height:60px;object-fit:cover;">
+          <div class="small text-muted">
+            <div class="fw-semibold text-dark">Current avatar</div>
+            <div class="text-secondary fw-semibold" style="font-size:.8rem;" id="activeAvatarSourceLabel">
+              {% if form.instance.avatar_source == "default" %}
+                Using default avatar
+              {% elif form.instance.avatar_source == "library" %}
+                Using gallery avatar
+              {% elif form.instance.avatar_source == "upload" %}
+                Using uploaded image
+              {% else %}
+                Using default avatar
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <p class="text-muted small mb-3">
+          Choose a fun avatar or upload your own photo.
+        </p>
+
+        <!-- Avatar source radios -->
+        <div class="mb-3">
+          {{ form.avatar_source.errors }}
+
+          <!-- Default -->
+          <div class="form-check mb-2">
+            <input class="form-check-input avatar-source-radio"
+                   type="radio"
+                   name="avatar_source"
+                   id="avatarSourceDefault"
+                   value="default"
+                   {% if form.instance.avatar_source == "default" %}checked{% endif %}>
+            <label class="form-check-label" for="avatarSourceDefault">
+              Use default avatar
+            </label>
+          </div>
+
+          <!-- Library -->
+          <div class="mb-2">
+            <div class="d-flex align-items-start justify-content-between w-100">
+              <div class="form-check m-0">
+                <input class="form-check-input avatar-source-radio"
+                       type="radio"
+                       name="avatar_source"
+                       id="avatarSourceLibrary"
+                       value="library"
+                       {% if form.instance.avatar_source == "library" %}checked{% endif %}>
+                <label class="form-check-label" for="avatarSourceLibrary">
+                  Choose from gallery
+                </label>
+              </div>
+
+              <button type="button"
+                      class="btn btn-outline-secondary btn-sm ms-3"
+                      data-bs-toggle="modal"
+                      data-bs-target="#avatarGalleryModal"
+                      id="openAvatarModalBtn">
+                Choose Avatar
+              </button>
+            </div>
+
+            <!-- Current selected gallery preview row -->
+            <div class="mt-2 ms-4 d-flex align-items-center"
+                 id="currentLibraryPreview"
+                 {% if form.instance.avatar_source == "library" and form.instance.avatar_library_filename %}
+                 style="display:flex;"
+                 {% else %}
+                 style="display:none;"
+                 {% endif %}>
+              <img id="currentLibraryPreviewImg"
+                   src="{% if form.instance.avatar_library_filename %}{{ STATIC_URL }}images/avatars/users/{{ form.instance.avatar_library_filename }}{% endif %}"
+                   alt="Selected avatar preview"
+                   class="rounded-circle me-2 border"
+                   style="width:48px;height:48px;object-fit:cover;">
+              <span class="small text-muted">Selected from gallery</span>
+            </div>
+          </div>
+
+          <!-- Upload -->
+          <div class="form-check mb-2">
+            <input class="form-check-input avatar-source-radio"
+                   type="radio"
+                   name="avatar_source"
+                   id="avatarSourceUpload"
+                   value="upload"
+                   {% if form.instance.avatar_source == "upload" %}checked{% endif %}>
+            <label class="form-check-label" for="avatarSourceUpload">
+              Upload my own image
+            </label>
+          </div>
+        </div>
+
+        <!-- Hidden field that stores chosen library avatar filename -->
+        {{ form.avatar_library_filename }}
+        {{ form.avatar_library_filename.errors }}
+
+        <!-- Upload section -->
+        <div id="avatarUploadSection"
+             class="border rounded p-3 mb-2"
+             style="display:none;">
+          <div class="fw-semibold mb-2">Upload your own image</div>
+          {{ form.avatar_upload }}
+          {{ form.avatar_upload.errors }}
+
+          {% if form.instance.avatar_source == "upload" and form.instance.avatar_upload %}
+          <div class="mt-3 d-flex align-items-center">
+            <img src="{{ form.instance.get_avatar_url }}"
+                 alt="Current uploaded avatar"
+                 class="rounded-circle me-3 border"
+                 style="width:60px;height:60px;object-fit:cover;">
+            <div class="text-muted small">Current uploaded avatar</div>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="form-text">
+          Default avatars live in <code>static/images/avatars/</code>. Uploads are stored in
+          <code>media/avatars/users/</code>. Gallery avatars are shared.
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Personal Info -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Personal Info</div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-sm-6 mb-3">
+            <label class="form-label">Birthday</label>
+            {{ form.birthday }}
+            {{ form.birthday.errors }}
+          </div>
+          <div class="col-sm-6 mb-3">
+            <label class="form-label">Anniversary (optional)</label>
+            {{ form.anniversary }}
+            {{ form.anniversary.errors }}
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-sm-4 mb-3">
+            <label class="form-label">Shirt Size</label>
+            {{ form.shirt_size }}
+          </div>
+          <div class="col-sm-4 mb-3">
+            <label class="form-label">Pants Size</label>
+            {{ form.pants_size }}
+          </div>
+          <div class="col-sm-4 mb-3">
+            <label class="form-label">Shoe Size</label>
+            {{ form.shoe_size }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Favorites -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Favorites & Notes</div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Hobbies / Sports / Interests</label>
+          {{ form.hobbies_sports }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Favorite Stores</label>
+          {{ form.favorite_stores }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Favorite Websites</label>
+          {{ form.favorite_websites }}
+        </div>
+
+        {% if form.fields.private_notes %}
+        <div class="mb-3">
+          <label class="form-label">Private Notes (Parent only)</label>
+          {{ form.private_notes }}
+          <div class="form-text text-muted">
+            Only visible to Parent users.
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 mb-4">
+      Save Profile
+    </button>
+  </form>
+</div>
+
+<!-- Avatar Modal -->
+<div class="modal fade" id="avatarGalleryModal" tabindex="-1" aria-labelledby="avatarGalleryLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-semibold" id="avatarGalleryLabel">Choose an Avatar</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <p class="text-muted small mb-3">Click an avatar to select it.</p>
+
+        <div class="row row-cols-3 row-cols-sm-4 row-cols-md-6 g-3">
+          {% for filename in available_avatars %}
+          <div class="col">
+            <button type="button"
+                    class="w-100 text-center border rounded p-2 bg-white avatar-modal-choice"
+                    data-avatar-filename="{{ filename }}"
+                    style="cursor:pointer;">
+              <img src="{{ STATIC_URL }}images/avatars/users/{{ filename }}"
+                   alt="Avatar {{ filename }}"
+                   class="rounded-circle border"
+                   style="width:64px;height:64px;object-fit:cover;">
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Avatar Script -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Elements
+  const sourceRadios = document.querySelectorAll(".avatar-source-radio");
+
+  const uploadSection = document.getElementById("avatarUploadSection");
+
+  const hiddenLibraryField = document.querySelector('input[name="avatar_library_filename"]');
+  const previewWrapper = document.getElementById("currentLibraryPreview");
+  const previewImg = document.getElementById("currentLibraryPreviewImg");
+  const libraryRadio = document.getElementById("avatarSourceLibrary");
+
+  const activeAvatarPreviewImg = document.getElementById("activeAvatarPreviewImg");
+  const activeAvatarSourceLabel = document.getElementById("activeAvatarSourceLabel");
+
+  const modalEl = document.getElementById("avatarGalleryModal");
+  const avatarModal = (window.bootstrap && modalEl) ? new bootstrap.Modal(modalEl) : null;
+
+  // point to default avatar asset for UI feedback
+  const defaultAvatarURL = "{{ STATIC_URL }}images/avatars/default_user.png";
+
+  function sync() {
+    // read which source is active
+    const selected = document.querySelector(".avatar-source-radio:checked");
+    const val = selected ? selected.value : null;
+
+    // toggle upload block
+    if (uploadSection) {
+      uploadSection.style.display = (val === "upload") ? "block" : "none";
+    }
+
+    if (val === "library" && hiddenLibraryField && hiddenLibraryField.value) {
+      // Use selected gallery avatar
+      const libURL = "{{ STATIC_URL }}images/avatars/users/" + hiddenLibraryField.value;
+
+      if (previewImg) previewImg.src = libURL;
+      if (previewWrapper) previewWrapper.style.display = "flex";
+
+      if (activeAvatarPreviewImg) activeAvatarPreviewImg.src = libURL;
+      if (activeAvatarSourceLabel) activeAvatarSourceLabel.textContent = "Using gallery avatar";
+
+    } else if (val === "upload") {
+      // Hide gallery preview row
+      if (previewWrapper) previewWrapper.style.display = "none";
+
+      // We don't instantly know the uploaded file URL before submit,
+      // so keep whatever is currently shown in activeAvatarPreviewImg,
+      // just update the label.
+      if (activeAvatarSourceLabel) activeAvatarSourceLabel.textContent = "Using uploaded image";
+
+    } else if (val === "default") {
+      // Hide gallery preview row
+      if (previewWrapper) previewWrapper.style.display = "none";
+
+      // Show default avatar in main preview
+      if (activeAvatarPreviewImg) activeAvatarPreviewImg.src = defaultAvatarURL;
+      if (activeAvatarSourceLabel) activeAvatarSourceLabel.textContent = "Using default avatar";
+
+    } else {
+      // Fallback, hide gallery row
+      if (previewWrapper) previewWrapper.style.display = "none";
+    }
+  }
+
+  // When user clicks an avatar in the modal
+  document.querySelectorAll(".avatar-modal-choice").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const filename = btn.dataset.avatarFilename;
+      if (!filename) return;
+
+      // Store filename in hidden field so form submission knows which file
+      if (hiddenLibraryField) hiddenLibraryField.value = filename;
+
+      // Switch radio to "library"
+      if (libraryRadio) {
+        libraryRadio.checked = true;
+      }
+
+      // Build URL for that avatar
+      const libURL = "{{ STATIC_URL }}images/avatars/users/" + filename;
+
+      // Update gallery preview row under "Choose from gallery"
+      if (previewImg) previewImg.src = libURL;
+      if (previewWrapper) previewWrapper.style.display = "flex";
+
+      // Update main preview/top section
+      if (activeAvatarPreviewImg) activeAvatarPreviewImg.src = libURL;
+      if (activeAvatarSourceLabel) activeAvatarSourceLabel.textContent = "Using gallery avatar";
+
+      // Close modal
+      if (avatarModal) {
+        avatarModal.hide();
+      }
+
+      // Final sync (to handle upload section visibility etc.)
+      sync();
+    });
+  });
+
+  // When toggling between default / library / upload manually
+  sourceRadios.forEach(radio => {
+    radio.addEventListener("change", sync);
+  });
+
+  // Initial paint
+  sync();
+});
+</script>
+{% endblock %}

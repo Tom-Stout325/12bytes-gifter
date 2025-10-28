@@ -19,6 +19,16 @@ class Family(models.Model):
     def __str__(self):
         return self.name
 
+def user_avatar_upload_path(instance, filename):
+    """
+    Store uploaded avatar images at:
+    media/avatars/users/<user_id>.png (or .jpg, etc.)
+    We ignore the original filename and just keep the extension.
+    """
+    # pull extension
+    ext = filename.split('.')[-1].lower()
+    return f"avatars/users/{instance.user.id}.{ext}"
+
 
 class Profile(models.Model):
     ROLE_PARENT = "Parent"
@@ -27,46 +37,41 @@ class Profile(models.Model):
         (ROLE_PARENT, "Parent"),
         (ROLE_CHILD, "Child"),
     ]
+    
+    AVATAR_SOURCE_DEFAULT = "default"
+    AVATAR_SOURCE_LIBRARY = "library"
+    AVATAR_SOURCE_UPLOAD = "upload"
 
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="profile",
-    )
+    AVATAR_SOURCE_CHOICES = [
+        (AVATAR_SOURCE_DEFAULT, "Default"),
+        (AVATAR_SOURCE_LIBRARY, "Library Choice"),
+        (AVATAR_SOURCE_UPLOAD, "Uploaded Image"),
+    ]
 
-    family = models.ForeignKey(
-        Family,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=False,
-        related_name="members",
-    )
 
-    role = models.CharField(
-        max_length=10,
-        choices=ROLE_CHOICES,
-    )
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile",)
+    family = models.ForeignKey(Family, on_delete=models.SET_NULL, null=True, blank=False, related_name="members",)
+    role = models.CharField(max_length=10,choices=ROLE_CHOICES,)
 
     # avatar logic
-    avatar_choice = models.CharField(
-        max_length=255,
-        blank=True,
-        help_text="Name/key of a preloaded avatar image.",
-    )
-    avatar_upload = models.ImageField(
-        upload_to="avatars/",
-        blank=True,
-        null=True,
-        help_text="User-uploaded avatar image.",
-    )
+    avatar_choice = models.CharField(max_length=255, blank=True, help_text="Name/key of a preloaded avatar image.",)
+    avatar_upload = models.ImageField(upload_to="avatars/", blank=True, null=True, help_text="User-uploaded avatar image.",)
+    avatar_source = models.CharField(max_length=20, choices=AVATAR_SOURCE_CHOICES, default=AVATAR_SOURCE_DEFAULT, 
+        help_text=(
+            "Where this profile's avatar comes from: default_user.png, "
+            "one of the stock library avatars, or a custom upload."),)
+    avatar_library_filename = models.CharField(max_length=255, blank=True,
+        help_text=(
+            "Filename of a static avatar in static/images/avatars/users/, "
+            "e.g. 'avatar_12.png'. Only used if avatar_source='library'."),)
 
+    avatar_upload = models.ImageField(upload_to=user_avatar_upload_path, blank=True, null=True, help_text=(
+            "User-uploaded avatar stored in media/avatars/users/. "
+            "Only used if avatar_source='upload'."),)
+    
     # personal dates
-    birthday = models.DateField()
-    anniversary = models.DateField(
-        blank=True,
-        null=True,
-        help_text="Optional anniversary date.",
-    )
+    birthday = models.DateField(null=True, blank=True)
+    anniversary = models.DateField(blank=True, null=True, help_text="Optional anniversary date.",)
 
     # sizing / favorites
     shirt_size = models.CharField(max_length=50, blank=True)
@@ -78,16 +83,10 @@ class Profile(models.Model):
     favorite_websites = models.TextField(blank=True)
 
     # private notes (parents only can view in UI)
-    private_notes = models.TextField(
-        blank=True,
-        help_text="Visible only to Parent users in the UI.",
-    )
+    private_notes = models.TextField(blank=True, help_text="Visible only to Parent users in the UI.",)
 
     # approval gating
-    is_approved = models.BooleanField(
-        default=False,
-        help_text="Must be true before this user can access the full app.",
-    )
+    is_approved = models.BooleanField(default=False, help_text="Must be true before this user can access the full app.",)
 
     # housekeeping
     created_at = models.DateTimeField(auto_now_add=True)
@@ -162,3 +161,38 @@ class Profile(models.Model):
         if (today.month, today.day) < (self.birthday.month, self.birthday.day):
             years -= 1
         return years
+
+    def __str__(self):
+            return f"Profile for {self.user.username}"
+
+    def get_avatar_url(self):
+        """
+        Returns the URL that templates should use for this user's avatar <img src="...">.
+
+        Priority:
+        1. If avatar_source == 'upload' and we have an uploaded file, use that.
+        2. If avatar_source == 'library' and we have a library filename, build static path.
+        3. Otherwise fall back to the default_user.png static avatar.
+        """
+
+        # Case 1: user-uploaded avatar
+        if (
+            self.avatar_source == self.AVATAR_SOURCE_UPLOAD
+            and self.avatar_upload
+            and hasattr(self.avatar_upload, "url")
+        ):
+            return self.avatar_upload.url  # served from MEDIA_URL
+
+        # Case 2: picked from library
+        if (
+            self.avatar_source == self.AVATAR_SOURCE_LIBRARY
+            and self.avatar_library_filename
+        ):
+            # Build a static-style path.
+            # This assumes your library avatars live in:
+            #   static/images/avatars/users/<filename>
+            return settings.STATIC_URL + "images/avatars/users/" + self.avatar_library_filename
+
+        # Case 3: default
+        # Fallback to default_user.png in static/images/avatars/
+        return settings.STATIC_URL + "images/avatars/default_user.png"
