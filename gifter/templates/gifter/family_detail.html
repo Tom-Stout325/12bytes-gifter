@@ -1,0 +1,251 @@
+{% extends "index.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="text-center mt-4">
+  <img
+    src="{% static 'images/logo.png' %}"
+    alt="Gifter Logo"
+    class="img-fluid mx-auto d-block"
+    style="max-width: 300px"
+  />
+</div>
+<div class="container py-4">
+
+  {# === Household Header Card === #}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body d-flex flex-wrap justify-content-between align-items-start">
+      <div class="me-3">
+        <h2 class="h4 fw-lighter mb-1 text-center" style="color:#3b8f88;">
+          {{ family.display_name }}
+        </h2>
+      </div>
+
+      <a href="{% url 'accounts:family_list' %}" class="btn btn-outline-secondary btn-sm mt-3 mt-sm-0">
+        ← All Families
+      </a>
+    </div>
+  </div>
+
+
+  {# === Coming Soon Section === #}
+  <div class="mb-3 text-uppercase text-muted small fw-semibold">
+    Coming Soon
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+
+      {% if upcoming_events %}
+        <div class="list-group list-group-flush">
+          {% for ev in upcoming_events %}
+            <div class="list-group-item px-0 d-flex justify-content-between align-items-start flex-wrap">
+
+              <div class="me-3 d-flex align-items-start">
+                {# avatar next to event #}
+                {% with person=ev.person %}
+                  <div class="rounded-circle border bg-light d-flex align-items-center justify-content-center overflow-hidden shadow-sm me-3"
+                       style="width:40px; height:40px; font-weight:600; font-size:0.8rem;">
+                    {% if person.get_avatar_url %}
+                      <img src="{{ person.get_avatar_url }}"
+                           class="img-fluid rounded-circle"
+                           style="width:40px; height:40px; object-fit:cover;"
+                           alt="{{ person.user.first_name }}">
+                    {% else %}
+                      {{ person.user.first_name|first }}{{ person.user.last_name|first }}
+                    {% endif %}
+                  </div>
+                {% endwith %}
+
+                <div>
+                  <div class="fw-semibold">
+                    {% if ev.label == "Birthday" %}
+                      {{ ev.person.user.first_name }}{% if ev.person.user.last_name %} {{ ev.person.user.last_name }}{% endif %}'s Birthday
+                    {% else %}
+                      Anniversary
+                    {% endif %}
+                  </div>
+
+                  <div class="small text-muted">
+                    {{ ev.label }}
+                  </div>
+                </div>
+              </div>
+
+              <span class="badge bg-primary-subtle text-primary fw-semibold px-2 py-1 rounded-pill mt-2 mt-sm-0">
+                {{ ev.date|date:"M j" }}
+              </span>
+            </div>
+          {% endfor %}
+        </div>
+
+      {% else %}
+        <div class="text-muted small">
+          No upcoming birthdays or anniversaries in the next two months.
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+
+  {# === Parents Section === #}
+  <div class="mb-3 text-uppercase text-muted small fw-semibold">
+    Parents
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3">
+
+        {# Parent 1 #}
+        {% if parent1 %}
+        <div class="col-12 col-sm-6">
+          <div class="d-flex align-items-center">
+
+            {% with person=parent1 %}
+              <div class="me-3">
+                <div class="rounded-circle border bg-light d-flex align-items-center justify-content-center overflow-hidden shadow-sm"
+                     style="width:56px; height:56px; font-weight:600; font-size:0.9rem;">
+                  {% if person.get_avatar_url %}
+                    <img src="{{ person.get_avatar_url }}"
+                         class="img-fluid rounded-circle"
+                         style="width:56px; height:56px; object-fit:cover;"
+                         alt="{{ person.user.first_name }}">
+                  {% else %}
+                    {{ person.user.first_name|first }}{{ person.user.last_name|first }}
+                  {% endif %}
+                </div>
+              </div>
+            {% endwith %}
+
+            <div>
+              <div class="fw-semibold">
+                {{ parent1.user.first_name }}
+                {% if parent1.user.last_name %} {{ parent1.user.last_name }}{% endif %}
+              </div>
+
+              <div class="text-muted small">
+                Parent
+                {% if parent1.anniversary %}
+                  · Anniv: {{ parent1.anniversary|date:"M j" }}
+                {% endif %}
+              </div>
+
+              <a href="{% url 'accounts:profile_detail' parent1.user.username %}"
+                 class="btn btn-sm btn-primary mt-2 w-auto">
+                View Profile
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+
+        {# Parent 2 #}
+        {% if parent2 %}
+        <div class="col-12 col-sm-6">
+          <div class="d-flex align-items-center">
+
+            {% with person=parent2 %}
+              <div class="me-3">
+                <div class="rounded-circle border bg-light d-flex align-items-center justify-content-center overflow-hidden shadow-sm"
+                     style="width:56px; height:56px; font-weight:600; font-size:0.9rem;">
+                  {% if person.get_avatar_url %}
+                    <img src="{{ person.get_avatar_url }}"
+                         class="img-fluid rounded-circle"
+                         style="width:56px; height:56px; object-fit:cover;"
+                         alt="{{ person.user.first_name }}">
+                  {% else %}
+                    {{ person.user.first_name|first }}{{ person.user.last_name|first }}
+                  {% endif %}
+                </div>
+              </div>
+            {% endwith %}
+
+            <div>
+              <div class="fw-semibold">
+                {{ parent2.user.first_name }}
+                {% if parent2.user.last_name %} {{ parent2.user.last_name }}{% endif %}
+              </div>
+
+              <div class="text-muted small">
+                Parent
+                {% if parent2.anniversary %}
+                  · Anniv: {{ parent2.anniversary|date:"M j" }}
+                {% endif %}
+              </div>
+
+              <a href="{% url 'accounts:profile_detail' parent2.user.username %}"
+                 class="btn btn-sm btn-primary mt-2 w-auto">
+                View Profile
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+
+  {# === Children Section === #}
+  <div class="mb-3 text-uppercase text-muted small fw-semibold">
+    Children
+  </div>
+
+  <div class="row g-3">
+    {% for kid in kids %}
+      <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+        <div class="card shadow-sm border-0 h-100 text-center">
+          <div class="card-body d-flex flex-column align-items-center">
+
+            {% with person=kid %}
+              <div class="rounded-circle border bg-light d-flex align-items-center justify-content-center overflow-hidden shadow-sm mb-2"
+                   style="width:60px; height:60px; font-weight:600; font-size:0.9rem;">
+                {% if person.get_avatar_url %}
+                  <img src="{{ person.get_avatar_url }}"
+                       class="img-fluid rounded-circle"
+                       style="width:60px; height:60px; object-fit:cover;"
+                       alt="{{ person.user.first_name }}">
+                {% else %}
+                  {{ person.user.first_name|first }}{{ person.user.last_name|first }}
+                {% endif %}
+              </div>
+            {% endwith %}
+
+            <div class="fw-semibold text-center">
+              {{ kid.user.first_name }}
+              {% if kid.user.last_name %} {{ kid.user.last_name }}{% endif %}
+            </div>
+
+            {% if kid.birthday %}
+              <div class="small text-muted mb-3">
+                Birthday: {{ kid.birthday|date:"M j" }}
+              </div>
+            {% else %}
+              <div class="small text-muted mb-3">&nbsp;</div>
+            {% endif %}
+
+            <a href="{% url 'accounts:profile_detail' kid.user.username %}"
+               class="btn btn-sm btn-outline-primary w-100 mt-auto">
+              View Wishlist
+            </a>
+
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <div class="alert alert-info small mb-0">
+          No children listed for this family yet.
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+{% endblock content %}

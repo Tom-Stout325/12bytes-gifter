@@ -4,8 +4,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.db.models import Prefetch
 from django import forms
 
+from gifter.models import WishlistItem
 from .forms import ProfileForm
 from .models import Profile
 
@@ -92,6 +94,7 @@ def profile_setup(request):
             instance=profile,
             viewer_profile=profile,
         )
+
 
         if form.is_valid():
             form.save()
@@ -207,8 +210,6 @@ def pending_approval(request):
     )
 
 
-from gifter.models import WishlistItem
-# ... keep your other imports ...
 
 
 @login_required
@@ -265,8 +266,8 @@ def profile_detail(request, username):
     
     
     
-from django.contrib.auth.decorators import login_required
-from django.db.models import Prefetch
+
+
 
 @login_required
 def profile_list(request):
@@ -296,3 +297,5 @@ def profile_list(request):
             "viewer_profile": viewer_profile,
         },
     )
+
+

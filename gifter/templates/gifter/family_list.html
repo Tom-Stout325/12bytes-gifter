@@ -1,0 +1,102 @@
+{% extends "index.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container py-5">
+
+<div class="text-center mt-4">
+  <img
+    src="{% static 'images/logo.png' %}"
+    alt="Gifter Logo"
+    class="img-fluid mx-auto d-block"
+    style="max-width: 300px"
+  />
+</div>
+  <div class="mx-auto" style="max-width:900px;">
+
+    <!-- Families header row -->
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
+      <div class="mb-3 mb-sm-0">
+        <div class="d-flex align-items-center">
+          <i class="fa-solid fa-people-roof me-2" style="color:#3b8f88;"></i>
+          <h2 class="h4 fw-semibold mb-0" style="color:#3b8f88;">Our Family</h2>
+        </div>
+
+      </div>
+
+      {# optional: future "Add Family" button for admin #}
+      {% if user.is_staff %}
+      <a href="{% url 'admin:accounts_family_add' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fa-solid fa-plus me-1"></i> Add Family
+      </a>
+      {% endif %}
+    </div>
+
+    <!-- Family cards grid -->
+    <div class="row g-3">
+      {% for fam in families %}
+        <div class="col-12 col-md-6">
+          <a href="{% url 'accounts:family_detail' fam.slug %}"
+             class="text-decoration-none text-reset d-block">
+            <div class="card border-0 shadow-sm h-100"
+                 style="border-radius: 0.75rem; transition: all .15s ease;">
+              <div class="card-body d-flex flex-column" style="min-height:140px;">
+
+                <!-- Top row: household name -->
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <div class="fw-semibold fs-5 text-dark">
+                      {{ fam.display_name }}
+                    </div>
+                    <div class="text-muted small">
+                      {{ fam.parent1.first_name }}{% if fam.parent1.last_name %} {{ fam.parent1.last_name }}{% endif %}
+                      {% if fam.parent2 %}
+                        &amp;
+                        {{ fam.parent2.first_name }}{% if fam.parent2.last_name %} {{ fam.parent2.last_name }}{% endif %}
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <!-- Chevron indicator -->
+                  <div class="text-muted">
+                    <i class="fa-solid fa-chevron-right"></i>
+                  </div>
+                </div>
+
+                <!-- Spacer flex grows so badge sits low -->
+                <div class="flex-grow-1"></div>
+
+                <!-- Members badge -->
+                <div>
+                  <span class="badge fw-semibold"
+                        style="background-color:rgba(59,143,136,.12); color:#3b8f88; font-size:0.75rem;">
+                    {{ fam.members.count }} member{{ fam.members.count|pluralize }}
+                  </span>
+                </div>
+
+              </div>
+            </div>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if families|length == 0 %}
+      <div class="alert alert-info mt-4">
+        No families have been added yet.
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<style>
+/* hover effect for cards */
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.12) !important;
+}
+</style>
+
+{% endblock content %}

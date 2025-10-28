@@ -1,23 +1,70 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.text import slugify
+
+
+
+User = settings.AUTH_USER_MODEL
+
+
 
 
 class Family(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    # optional convenience for later (filtering, URLs, etc.)
-    slug = models.SlugField(max_length=120, unique=True, blank=True)
+    parent1 = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="family_as_parent1",
+        limit_choices_to={"profile__role": "Parent"},
+        null=True, 
+    blank=True,
+    )
+    parent2 = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="family_as_parent2",
+        limit_choices_to={"profile__role": "Parent"},
+        null=True,  
+    blank=True,
+    )
 
-    # housekeeping
+    # Optional custom display name (“Anthony & Erica” or “The Stout Family”)
+    display_name = models.CharField(max_length=200, blank=True)
+    slug = models.SlugField(max_length=200, unique=True, blank=True)
+
+    # Housekeeping
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = "Family"
         verbose_name_plural = "Families"
-        ordering = ["name"]
+        ordering = ["display_name"]
 
     def __str__(self):
-        return self.name
+        return self.display_name or f"{self.parent1} & {self.parent2}"
+
+    def save(self, *args, **kwargs):
+        # Auto-generate display name if not manually set
+        if not self.display_name:
+            p1_name = self.parent1.first_name or self.parent1.username
+            p2_name = self.parent2.first_name or self.parent2.username
+            self.display_name = f"{p1_name} & {p2_name}"
+
+        # Auto-create slug from display name
+        if not self.slug:
+            base_slug = slugify(self.display_name)
+            unique_slug = base_slug
+            counter = 1
+            while Family.objects.filter(slug=unique_slug).exclude(pk=self.pk).exists():
+                unique_slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = unique_slug
+
+        super().save(*args, **kwargs)
+
+
+
+
 
 def user_avatar_upload_path(instance, filename):
     """
@@ -28,6 +75,7 @@ def user_avatar_upload_path(instance, filename):
     # pull extension
     ext = filename.split('.')[-1].lower()
     return f"avatars/users/{instance.user.id}.{ext}"
+
 
 
 class Profile(models.Model):
@@ -48,11 +96,10 @@ class Profile(models.Model):
         (AVATAR_SOURCE_UPLOAD, "Uploaded Image"),
     ]
 
-
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile",)
-    family = models.ForeignKey(Family, on_delete=models.SET_NULL, null=True, blank=False, related_name="members",)
+    family = models.ForeignKey("accounts.Family", on_delete=models.SET_NULL, null=True,blank=True, related_name="members",)
     role = models.CharField(max_length=10,choices=ROLE_CHOICES,)
-
+    
     # avatar logic
     avatar_choice = models.CharField(max_length=255, blank=True, help_text="Name/key of a preloaded avatar image.",)
     avatar_upload = models.ImageField(upload_to="avatars/", blank=True, null=True, help_text="User-uploaded avatar image.",)
@@ -196,3 +243,7 @@ class Profile(models.Model):
         # Case 3: default
         # Fallback to default_user.png in static/images/avatars/
         return settings.STATIC_URL + "images/avatars/default_user.png"
+    
+    
+    
+    

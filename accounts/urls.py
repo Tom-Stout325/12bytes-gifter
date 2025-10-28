@@ -1,5 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
+
+from . import views_family
 from . import views
 
 app_name = "accounts"
@@ -46,4 +48,7 @@ urlpatterns = [
         template_name="accounts/password_reset_complete.html"),
         name="password_reset_complete",
     ),
+    
+    path("families/", views_family.family_list, name="family_list"),
+    path("families/<slug:slug>/", views_family.family_detail, name="family_detail"),
 ]

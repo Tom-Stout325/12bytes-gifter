@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.db import models
 from django.utils import timezone
+from django.utils.text import slugify
 from accounts.models import Profile
 
 
@@ -173,3 +174,5 @@ class WishlistItem(models.Model):
         self.is_purchased = False
         self.purchased_by = None
         self.purchased_at = None
+
+

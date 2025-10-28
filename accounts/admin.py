@@ -4,9 +4,9 @@ from .models import Family, Profile
 
 @admin.register(Family)
 class FamilyAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "created_at")
-    search_fields = ("name", "slug")
-    ordering = ("name",)
+    list_display = ("display_name", "slug", "created_at")
+    search_fields = ("display_name", "slug")
+    ordering = ("display_name",)
 
 
 @admin.register(Profile)
