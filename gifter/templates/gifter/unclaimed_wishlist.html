@@ -1,0 +1,57 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="container py-4">
+
+  <h1 class="h4 fw-semibold mb-3">
+    Still Up For Grabs
+  </h1>
+
+  <p class="text-muted small mb-4">
+    Unclaimed items across your family. Mark them as yours so nobody double-buys.
+  </p>
+
+  <div class="list-group">
+    {% for item in unclaimed_items %}
+      <div class="list-group-item">
+        <div class="d-flex justify-content-between">
+          <div>
+            <div class="fw-semibold">
+              {{ item.title|default:"(no title)" }}
+              {% if item.price_estimate %}
+                <span class="text-muted small ms-2">~$ {{ item.price_estimate }}</span>
+              {% endif %}
+            </div>
+            <div class="text-muted small">
+              for {{ item.profile.user.first_name }}
+              {% if item.profile.user.last_name %} {{ item.profile.user.last_name }}{% endif %}
+            </div>
+          </div>
+
+          <div class="text-end">
+            <form action="{% url 'gifter:claim_wishlist_item' pk=item.pk %}" method="post" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-success">
+                <i class="fa-solid fa-check me-1"></i> Claim
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {% if item.link %}
+          <div class="small mt-2">
+            <a href="{{ item.link }}" target="_blank" rel="noopener">
+              <i class="fa-solid fa-cart-shopping me-1"></i> Buy link
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    {% empty %}
+      <div class="list-group-item text-muted fst-italic">
+        Nothing left. Your family is on it 😎
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock content %}

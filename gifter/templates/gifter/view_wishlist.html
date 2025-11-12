@@ -1,0 +1,60 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="container py-4">
+
+  <h1 class="h4 fw-semibold mb-3">
+    {{ target_profile.user.first_name }}
+    {% if target_profile.user.last_name %} {{ target_profile.user.last_name }}{% endif %}'s Wishlist
+  </h1>
+
+  <div class="text-muted small mb-4">
+    @{{ target_profile.user.username }}
+    {% if target_profile.role == target_profile.ROLE_PARENT %}
+      <span class="badge bg-secondary ms-2">Parent</span>
+    {% endif %}
+  </div>
+
+  <div class="list-group">
+    {% for item in items %}
+      <div class="list-group-item">
+        <div class="d-flex justify-content-between">
+          <div class="fw-semibold">
+            {{ item.title|default:"(no title)" }}
+          </div>
+          <div>
+            <span class="badge {% if item.is_claimed %}bg-success{% else %}bg-light text-dark border{% endif %}">
+              {% if item.is_claimed %}Claimed{% else %}Unclaimed{% endif %}
+            </span>
+          </div>
+        </div>
+
+        {% if item.price_estimate %}
+          <div class="text-muted small">
+            ~$ {{ item.price_estimate }}
+          </div>
+        {% endif %}
+
+        {% if item.link %}
+          <div class="small">
+            <a href="{{ item.link }}" target="_blank" rel="noopener">
+              <i class="fa-solid fa-link me-1"></i> View link
+            </a>
+          </div>
+        {% endif %}
+
+        {% if item.description %}
+          <div class="small text-muted mt-2">
+            {{ item.description }}
+          </div>
+        {% endif %}
+      </div>
+    {% empty %}
+      <div class="list-group-item text-muted fst-italic">
+        No items yet.
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock content %}

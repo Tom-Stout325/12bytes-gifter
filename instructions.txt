@@ -1,0 +1,107 @@
+# Core Django stack
+Django>=5.0,<6.0
+gunicorn
+dj-database-url
+psycopg2-binary
+
+# Environment and configuration
+django-environ
+whitenoise
+
+# Authentication and user management
+django-allauth        # Handles registration, login, password reset (optional but highly recommended)
+
+# Frontend forms and UI
+django-crispy-forms
+crispy-bootstrap5
+pillow           
+
+# File storage (S3 media uploads)
+django-storages
+boto3
+
+# Optional utilities
+django-formtools      # Multi-step forms (keep if you’ll have wizards or multi-page workflows)
+django-redis          
+redis
+
+# PDF generation
+weasyprint==59.0
+
+
+
+Original Reqs:
+asgiref==3.10.0
+boto3==1.40.59
+botocore==1.40.59
+Brotli==1.1.0
+cffi==2.0.0
+crispy-bootstrap5==2025.6
+cssselect2==0.8.0
+dj-database-url==3.0.1
+Django==5.2.7
+django-allauth==65.12.1
+django-crispy-forms==2.4
+django-environ==0.12.0
+django-formtools==2.5.1
+django-redis==6.0.0
+django-storages==1.14.6
+fonttools==4.60.1
+gunicorn==23.0.0
+html5lib==1.1
+jmespath==1.0.1
+packaging==25.0
+pillow==12.0.0
+psycopg2-binary==2.9.11
+pycparser==2.23
+pydyf==0.11.0
+pyphen==0.17.2
+python-dateutil==2.9.0.post0
+redis==7.0.0
+s3transfer==0.14.0
+six==1.17.0
+sqlparse==0.5.3
+tinycss2==1.4.0
+urllib3==2.5.0
+weasyprint==59.0
+webencodings==0.5.1
+whitenoise==6.11.0
+zopfli==0.2.3.post1
+
+
+Color Palette:
+
+Primary: 2a9d8f
+Secondary: 264653
+Success: e9c46a
+Danger:  d62828
+Emphasis: f4a261
+Links:  e76f51
+
+
+
+
+===============. NOTES
+
+Add later:  Ability for a child to tell a parent to mark an item claimed/purchased.
+
+
+
+Change MIT license to restrict use
+
+
+
+Run Collectstatic:
+heroku run -a gifter-stout -- python manage.py collectstatic --noinput
+heroku run -a gifter-demo -- python manage.py collectstatic --noinput
+
+# Family app
+heroku logs -a gifter-stout --tail
+
+# Demo app
+heroku logs -a gifter-demo --tail
+
+
+TURN DEBUG ON/OFF
+heroku config:set DEBUG=True --app gifter-stout
+heroku config:set DEBUG=False --app gifter-stout

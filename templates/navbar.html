@@ -1,0 +1,126 @@
+{% load static %}
+{% with p=user_profile %}
+<nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--color-secondary)">
+  <div class="container-fluid">
+
+    <!-- Brand -->
+    <a class="navbar-brand d-flex align-items-center fw-semibold" href="{% url 'root' %}">
+      <img src="{% static 'images/logo.png' %}" alt="Gifter Logo" class="me-2" style="height: 36px; width: auto" id="navbar-logo"/>
+      Gifter
+    </a>
+
+    <!-- Mobile Toggle Button -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+            aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Collapsible Content -->
+    <div class="collapse navbar-collapse" id="mainNav">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+
+        {% if not request.user.is_authenticated %}
+          <!-- Guest links -->
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'accounts:login' %}">
+              <i class="fa-solid fa-right-to-bracket me-1"></i> Login
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'accounts:register' %}">
+              <i class="fa-solid fa-user-plus me-1"></i> Register
+            </a>
+          </li>
+
+        {% else %}
+          {% if not p %}
+            <!-- Auth but missing profile (safe fallback) -->
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'accounts:profile_setup' %}">
+                <i class="fa-solid fa-pen-to-square me-1"></i> Complete Profile
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'accounts:logout' %}">
+                <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+              </a>
+            </li>
+
+          {% else %}
+            {% if p.is_approved %}
+              {% with name=request.resolver_match.url_name %}
+                <!-- All Families -->
+                <li class="nav-item">
+                  <a class="nav-link {% if name == 'all_families' or name == 'family_detail' %}active{% endif %}"
+                     href="{% url 'gifter:all_families' %}">
+                    <i class="fa-solid fa-people-roof me-1"></i> All Families
+                  </a>
+                </li>
+
+                <!-- My Family -->
+                {% if p.family %}
+                <li class="nav-item">
+                  <a class="nav-link {% if name == 'family_detail' and request.resolver_match.kwargs.slug == p.family.slug %}active{% endif %}"
+                     href="{% url 'gifter:family_detail' slug=p.family.slug %}">
+                    <i class="fa-solid fa-house-user me-1"></i> My Family
+                  </a>
+                </li>
+                {% endif %}
+
+                <!-- My Profile -->
+                <li class="nav-item">
+                  <a class="nav-link {% if name == 'profile_detail' %}active{% endif %}"
+                     href="{% url 'accounts:profile_detail' username=request.user.username %}">
+                    <i class="fa-solid fa-user me-1"></i> My Profile
+                  </a>
+                </li>
+              {% endwith %}
+            {% else %}
+              <!-- Pending approval view -->
+              <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'pending_approval' %}active{% endif %}"
+                   href="{% url 'accounts:pending_approval' %}">
+                  <i class="fa-solid fa-clock me-1"></i> Pending Approval
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link {% if request.resolver_match.url_name == 'profile_setup' %}active{% endif %}"
+                   href="{% url 'accounts:profile_setup' %}">
+                  <i class="fa-solid fa-pen-to-square me-1"></i> Complete Profile
+                </a>
+              </li>
+            {% endif %}
+
+            <!-- Role badge / identity summary -->
+            <li class="nav-item d-flex align-items-center ms-lg-3 mt-2 mt-lg-0">
+              <span class="badge bg-emphasis text-dark fw-semibold" style="font-size: 0.8rem">
+                {{ request.user.first_name }}{% if request.user.last_name %} {{ request.user.last_name }}{% endif %}
+                {% if p.role == "Parent" %} · {{ p.role }}{% endif %}
+              </span>
+            </li>
+
+            <!-- Logout -->
+            <li class="nav-item ms-lg-3">
+              <a class="nav-link" href="{% url 'accounts:logout' %}">
+                <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+              </a>
+            </li>
+
+          {% endif %}
+        {% endif %}
+
+        <!-- Theme Toggle -->
+        <li class="nav-item ms-lg-3 my-2 my-lg-0">
+          <button id="theme-toggle"
+                  class="btn btn-sm btn-outline-light d-flex align-items-center justify-content-center"
+                  type="button" aria-label="Toggle theme"
+                  style="min-width: 2rem; min-height: 2rem; line-height: 1;">
+            <i id="theme-icon" class="fa-solid fa-moon" style="font-size: 0.9rem; line-height: 1;"></i>
+          </button>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+</nav>
+{% endwith %}

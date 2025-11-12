@@ -1,0 +1,63 @@
+{% extends "index.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Register | Gifter{% endblock %}
+
+{% block content %}
+<div class="text-center mt-4">
+  <img src="{% static 'images/logo.png' %}" alt="Gifter Logo"
+        class="img-fluid mx-auto d-block mb-3" style="max-width: 300px" />
+</div>
+<div class="container mt-5" style="max-width: 500px;">
+  <h2 class="mb-4 text-center text-secondary">Create an Account</h2>
+
+  <form method="POST" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div class="mb-3">
+      <label class="form-label">First Name</label>
+      {{ form.first_name }}
+      {{ form.first_name.errors }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Last Name</label>
+      {{ form.last_name }}
+      {{ form.last_name.errors }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Username</label>
+      {{ form.username }}
+      {{ form.username.errors }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      {{ form.email }}
+      {{ form.email.errors }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Password</label>
+      {{ form.password }}
+      {{ form.password.errors }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Confirm Password</label>
+      {{ form.confirm_password }}
+      {{ form.confirm_password.errors }}
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Register</button>
+  </form>
+
+  <p class="text-center mt-3">
+    Already have an account?
+    <a href="{% url 'accounts:login' %}" class="text-primary">Login here</a>
+  </p>
+</div>
+{% endblock %}

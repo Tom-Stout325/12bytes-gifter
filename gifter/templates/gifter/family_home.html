@@ -1,0 +1,135 @@
+{% extends "index.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+
+  <!-- Logo -->
+  <div class="text-center mt-4 mb-4">
+    <img src="{% static 'images/logo.png' %}" alt="Gifter Logo"
+         class="img-fluid mx-auto d-block" style="max-width: 260px;">
+  </div>
+
+  <div class="mx-auto" style="max-width:900px;">
+
+    <!-- Header + Actions -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="h4 fw-semibold mb-0" style="color:#3b8f88;">Our Family Wishlists</h2>
+        <div class="text-muted small">See what everyone’s hoping for — and add to your own list.</div>
+      </div>
+
+      <div class="mt-3 mt-sm-0">
+        <a href="{% url 'gifter:add_wishlist_item' viewer_profile.user.username %}"
+           class="btn btn-sm btn-primary me-2">
+          <i class="fa-solid fa-plus me-1"></i> Add to My Wishlist
+        </a>
+        <a href="{% url 'gifter:family_upcoming' %}" class="btn btn-sm btn-outline-secondary">
+          <i class="fa-solid fa-calendar-days me-1"></i> Upcoming Events
+        </a>
+      </div>
+    </div>
+
+    <!-- Coming Soon -->
+    {% if next_event_profile %}
+    <div class="alert alert-light border rounded-3 shadow-sm mb-5 p-4 d-flex align-items-center">
+      <img src="{{ next_event_profile.get_avatar_url }}" alt="{{ next_event_profile.user.first_name }}"
+           class="rounded-circle me-3 border" style="width:64px; height:64px; object-fit:cover;">
+      <div class="flex-grow-1">
+        <div class="fw-semibold text-dark mb-1">
+          Coming up next: {{ next_event_profile.user.first_name }}
+          {% if next_event_profile.user.last_name %} {{ next_event_profile.user.last_name }}{% endif %}
+        </div>
+        <div class="text-muted">{{ next_event_label }}</div>
+      </div>
+      <a href="{% url 'accounts:profile_detail' next_event_profile.user.username %}"
+         class="btn btn-sm btn-outline-success ms-3">
+        <i class="fa-solid fa-user me-1"></i> View Profile
+      </a>
+    </div>
+    {% endif %}
+
+    <!-- My Wishlist -->
+    <div class="mb-5">
+      <div class="d-flex align-items-center mb-2">
+        <i class="fa-solid fa-list-check me-2" style="color:#3b8f88;"></i>
+        <h3 class="h5 fw-semibold mb-0" style="color:#3b8f88;">My Wishlist</h3>
+      </div>
+
+      {% if my_items %}
+        <ul class="list-group list-group-flush">
+          {% for item in my_items %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-semibold">{{ item.title }}</div>
+              {% if item.description %}
+                <div class="text-muted small">{{ item.description|truncatewords:10 }}</div>
+              {% endif %}
+            </div>
+            <div>
+              <a href="{% url 'gifter:edit_wishlist_item' item.pk %}"
+                 class="btn btn-sm btn-outline-secondary me-1" title="Edit">
+                <i class="fa-solid fa-pen"></i>
+              </a>
+              <a href="{% url 'gifter:delete_wishlist_item' item.pk %}"
+                 class="btn btn-sm btn-outline-danger" title="Delete">
+                <i class="fa-solid fa-trash"></i>
+              </a>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="text-muted small ms-1 mt-2">You haven’t added any items yet.</div>
+      {% endif %}
+    </div>
+
+    <!-- Family Members -->
+    <div class="mb-3">
+      <div class="d-flex align-items-center mb-3">
+        <i class="fa-solid fa-people-group me-2" style="color:#3b8f88;"></i>
+        <h3 class="h5 fw-semibold mb-0" style="color:#3b8f88;">Our Family</h3>
+      </div>
+
+      <div class="row g-3">
+        {% for member in family_members %}
+          <div class="col-12 col-md-6">
+            <div class="card border-0 shadow-sm h-100"
+                 style="border-radius:0.75rem; transition: all .15s ease;">
+              <div class="card-body d-flex align-items-center">
+                <img src="{{ member.get_avatar_url }}" alt="{{ member.user.first_name }}"
+                     class="rounded-circle me-3 border"
+                     style="width:56px; height:56px; object-fit:cover;">
+                <div class="flex-grow-1">
+                  <div class="fw-semibold">
+                    {{ member.user.first_name }} {% if member.user.last_name %}{{ member.user.last_name }}{% endif %}
+                  </div>
+                  {% if member.birthday %}
+                    <div class="text-muted small">{{ member.upcoming_birthday_label }}</div>
+                  {% endif %}
+                </div>
+                <a href="{% url 'accounts:profile_detail' member.user.username %}"
+                   class="btn btn-sm btn-outline-primary">
+                  View Profile
+                </a>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="col-12">
+            <div class="alert alert-info">No family members yet. Ask a parent to invite them!</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.12) !important;
+}
+</style>
+{% endblock content %}

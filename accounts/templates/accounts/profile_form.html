@@ -1,0 +1,318 @@
+{% extends "index.html" %}
+{% load static %}
+
+{% block title %}
+  {% if setup_mode %}Set Up Profile | Gifter{% else %}Edit Profile | Gifter{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 700px;">
+  <h2 class="text-secondary mb-3 text-center">
+    {% if setup_mode %}Set Up Your Profile{% else %}Edit Your Profile{% endif %}
+  </h2>
+  <p class="text-muted text-center mb-4">
+    {% if setup_mode %}
+      Add your info and avatar so your family can pick the perfect gifts for you.
+    {% else %}
+      Update your info and avatar so your family can pick the perfect gifts for you.
+    {% endif %}
+  </p>
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <!-- === USER INFO CARD === -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Your Account</div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">First Name</label>
+            {{ form.first_name }}
+            {{ form.first_name.errors }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Last Name</label>
+            {{ form.last_name }}
+            {{ form.last_name.errors }}
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Username <span class="text-danger">*</span></label>
+          {{ form.username }}
+          {{ form.username.errors }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email Address</label>
+          {{ form.email }}
+          {{ form.email.errors }}
+          <div class="form-text text-muted">
+            Used for login and notifications.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Household Info -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Household</div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Family / Household</label>
+          {{ form.family }}
+          {{ form.family.errors }}
+        </div>
+        <div class="mb-0">
+          <label class="form-label">Role</label>
+          {{ form.role }}
+          {{ form.role.errors }}
+          <div class="form-text">
+            Parents can manage family profiles.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Avatar -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+        <span>Avatar</span>
+        <span class="text-muted small">This is how you'll appear</span>
+      </div>
+      <div class="card-body">
+        <!-- Live avatar preview / status -->
+        <div class="d-flex align-items-center mb-3">
+          <img id="activeAvatarPreviewImg"
+               src="{{ form.instance.get_avatar_url }}"
+               alt="Current avatar"
+               class="rounded-circle border me-3"
+               style="width:60px;height:60px;object-fit:cover;">
+          <div class="small text-muted">
+            <div class="fw-semibold text-dark">Current avatar</div>
+            <div class="text-secondary fw-semibold" style="font-size:.8rem;" id="activeAvatarSourceLabel">
+              {% if form.instance.avatar_source == "default" %}
+                Using default avatar
+              {% elif form.instance.avatar_source == "library" %}
+                Using gallery avatar
+              {% elif form.instance.avatar_source == "upload" %}
+                Using uploaded image
+              {% else %}
+                Using default avatar
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <p class="text-muted small mb-3">
+          Choose a fun avatar or upload your own photo.
+        </p>
+
+        <!-- Avatar source radios -->
+        <div class="mb-3">
+          {{ form.avatar_source.errors }}
+
+          <!-- Default -->
+          <div class="form-check mb-2">
+            <input class="form-check-input avatar-source-radio"
+                   type="radio"
+                   name="avatar_source"
+                   id="avatarSourceDefault"
+                   value="default"
+                   {% if form.instance.avatar_source == "default" %}checked{% endif %}>
+            <label class="form-check-label" for="avatarSourceDefault">
+              Use default avatar
+            </label>
+          </div>
+
+          <!-- Library -->
+          <div class="mb-2">
+            <div class="d-flex align-items-start justify-content-between w-100">
+              <div class="form-check m-0">
+                <input class="form-check-input avatar-source-radio"
+                       type="radio"
+                       name="avatar_source"
+                       id="avatarSourceLibrary"
+                       value="library"
+                       {% if form.instance.avatar_source == "library" %}checked{% endif %}>
+                <label class="form-check-label" for="avatarSourceLibrary">
+                  Choose from gallery
+                </label>
+              </div>
+              <button type="button"
+                      class="btn btn-outline-secondary btn-sm ms-3"
+                      data-bs-toggle="modal"
+                      data-bs-target="#avatarGalleryModal"
+                      id="openAvatarModalBtn">
+                Choose Avatar
+              </button>
+            </div>
+
+            <!-- Current selected gallery preview -->
+            <div class="mt-2 ms-4 d-flex align-items-center"
+                 id="currentLibraryPreview"
+                 {% if form.instance.avatar_source == "library" and form.instance.avatar_library_filename %}
+                 style="display:flex;"
+                 {% else %}
+                 style="display:none;"
+                 {% endif %}>
+              <img id="currentLibraryPreviewImg"
+                   src="{% if form.instance.avatar_library_filename %}{{ STATIC_URL }}images/avatars/users/{{ form.instance.avatar_library_filename }}{% endif %}"
+                   alt="Selected avatar preview"
+                   class="rounded-circle me-2 border"
+                   style="width:48px;height:48px;object-fit:cover;">
+              <span class="small text-muted">Selected from gallery</span>
+            </div>
+          </div>
+
+          <!-- Upload -->
+          <div class="form-check mb-2">
+            <input class="form-check-input avatar-source-radio"
+                   type="radio"
+                   name="avatar_source"
+                   id="avatarSourceUpload"
+                   value="upload"
+                   {% if form.instance.avatar_source == "upload" %}checked{% endif %}>
+            <label class="form-check-label" for="avatarSourceUpload">
+              Upload my own image
+            </label>
+          </div>
+        </div>
+
+        <!-- Hidden field for library filename -->
+        {{ form.avatar_library_filename }}
+        {{ form.avatar_library_filename.errors }}
+
+        <!-- Upload section -->
+        <div id="avatarUploadSection"
+             class="border rounded p-3 mb-2"
+             style="display:none;">
+          <div class="fw-semibold mb-2">Upload your own image</div>
+          {{ form.avatar_upload }}
+          {{ form.avatar_upload.errors }}
+          {% if form.instance.avatar_source == "upload" and form.instance.avatar_upload %}
+          <div class="mt-3 d-flex align-items-center">
+            <img src="{{ form.instance.get_avatar_url }}"
+                 alt="Current uploaded avatar"
+                 class="rounded-circle me-3 border"
+                 style="width:60px;height:60px;object-fit:cover;">
+            <div class="text-muted small">Current uploaded avatar</div>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="form-text">
+          Default avatars live in <code>static/images/avatars/</code>. Uploads are stored in
+          <code>media/avatars/users/</code>. Gallery avatars are shared.
+        </div>
+      </div>
+    </div>
+
+    <!-- Personal Info -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Personal Info</div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-sm-6 mb-3">
+            <label class="form-label">Birthday</label>
+            {{ form.birthday }}
+            {{ form.birthday.errors }}
+          </div>
+          <div class="col-sm-6 mb-3">
+            <label class="form-label">Anniversary (optional)</label>
+            {{ form.anniversary }}
+            {{ form.anniversary.errors }}
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-sm-4 mb-3">
+            <label class="form-label">Shirt Size</label>
+            {{ form.shirt_size }}
+          </div>
+          <div class="col-sm-4 mb-3">
+            <label class="form-label">Pants Size</label>
+            {{ form.pants_size }}
+          </div>
+          <div class="col-sm-4 mb-3">
+            <label class="form-label">Shoe Size</label>
+            {{ form.shoe_size }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Favorites -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Favorites & Notes</div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Hobbies / Sports / Interests</label>
+          {{ form.hobbies_sports }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Favorite Stores</label>
+          {{ form.favorite_stores }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Favorite Websites</label>
+          {{ form.favorite_websites }}
+        </div>
+        {% if form.fields.private_notes %}
+        <div class="mb-3">
+          <label class="form-label">Private Notes (Parent only)</label>
+          {{ form.private_notes }}
+          <div class="form-text text-muted">
+            Only visible to Parent users.
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 mb-4">
+      {% if setup_mode %}Complete Setup{% else %}Save Profile{% endif %}
+    </button>
+  </form>
+</div>
+
+<!-- Avatar Modal -->
+<div class="modal fade" id="avatarGalleryModal" tabindex="-1" aria-labelledby="avatarGalleryLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-semibold" id="avatarGalleryLabel">Choose an Avatar</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small mb-3">Click an avatar to select it.</p>
+        <div class="row row-cols-3 row-cols-sm-4 row-cols-md-6 g-3">
+          {% for filename in available_avatars %}
+          <div class="col">
+            <button type="button"
+                    class="w-100 text-center border rounded p-2 bg-white avatar-modal-choice"
+                    data-avatar-filename="{{ filename }}"
+                    style="cursor:pointer;">
+              <img src="{{ STATIC_URL }}images/avatars/users/{{ filename }}"
+                   alt="Avatar {{ filename }}"
+                   class="rounded-circle border"
+                   style="width:64px;height:64px;object-fit:cover;">
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Avatar Script (unchanged) -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // ... [your existing script unchanged] ...
+    // (Copy-paste your full script here — it's perfect)
+  });
+</script>
+{% endblock %}

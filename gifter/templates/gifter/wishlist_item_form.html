@@ -1,0 +1,79 @@
+{% extends "index.html" %}
+
+{% block title %}Add Wishlist Item | Gifter{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4" style="max-width: 600px;">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Add Wishlist Item</span>
+      <small class="text-muted">
+        For {{ target_user.first_name }} {{ target_user.last_name }}
+      </small>
+    </div>
+
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <!-- Title -->
+        <div class="mb-3">
+          <label class="form-label">Item Name</label>
+          {{ form.title }}
+          {{ form.title.errors }}
+          <div class="form-text">
+            Example: “Nintendo Switch OLED”
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="mb-3">
+          <label class="form-label">Details / Notes</label>
+          {{ form.description }}
+          {{ form.description.errors }}
+          <div class="form-text">
+            Color, size, which brand/model, etc.
+          </div>
+        </div>
+
+        <!-- Link -->
+        <div class="mb-3">
+          <label class="form-label">Shopping Link (optional)</label>
+          {{ form.link }}
+          {{ form.link.errors }}
+          <div class="form-text">
+            Paste a link to the product page so people can buy it.
+          </div>
+        </div>
+
+        <!-- Price -->
+        <div class="mb-3">
+          <label class="form-label">Price / Budget (optional)</label>
+          {{ form.price_estimate }}
+          {{ form.price_estimate.errors }}
+          <div class="form-text">
+            We'll use this later to total spending. Example: 24.99
+          </div>
+        </div>
+
+        <!-- Image -->
+        <div class="mb-3">
+          <label class="form-label">Image / Screenshot (optional)</label>
+          {{ form.image }}
+          {{ form.image.errors }}
+          <div class="form-text">
+            You can upload a photo or screenshot of the item.
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">
+          Save Item
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "index.html" %}
+{% load static %}
+
+{% block title %}Login | Gifter{% endblock %}
+
+{% block content %}
+  <div class="text-center mt-4">
+    <img src="{% static 'images/logo.png' %}" alt="Gifter Logo"
+         class="img-fluid mx-auto d-block mb-3" style="max-width: 300px" />
+  </div>
+<div class="container mt-5" style="max-width: 450px;">
+  <h2 class="mb-4 text-center text-secondary">Login</h2>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.errors %}
+      <div class="alert alert-danger">Invalid username or password.</div>
+    {% endif %}
+
+    <div class="mb-3">
+      <label for="id_username" class="form-label">Username</label>
+      <input
+        type="text"
+        name="username"
+        autofocus
+        required
+        id="id_username"
+        class="form-control"
+        placeholder="Enter your username"
+      />
+    </div>
+
+    <div class="mb-3">
+      <label for="id_password" class="form-label">Password</label>
+      <input
+        type="password"
+        name="password"
+        required
+        id="id_password"
+        class="form-control"
+        placeholder="Enter your password"
+      />
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Login</button>
+  </form>
+
+  <p class="text-center mt-3">
+    Don’t have an account?
+    <a href="{% url 'accounts:register' %}" class="text-primary">Register</a>
+  </p>
+  <p class="text-center mt-3">
+    <a href="{% url 'accounts:password_reset' %}">Forgot your password?</a>
+  </p>
+
+</div>
+{% endblock %}

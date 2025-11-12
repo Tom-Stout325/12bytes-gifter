@@ -1,0 +1,37 @@
+{% extends "index.html" %}
+{% block content %}
+<div class="container py-4" style="max-width: 560px;">
+  <h1 class="h5 mb-3">Account Settings</h1>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label">First name</label>
+      {{ form.first_name }}
+      {% for e in form.first_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Last name</label>
+      {{ form.last_name }}
+      {% for e in form.last_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Username</label>
+      {{ form.username }}
+      {% for e in form.username.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      {{ form.email }}
+      {% for e in form.email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    </div>
+    <button class="btn btn-primary w-100" type="submit">Save</button>
+  </form>
+
+  <hr class="my-4">
+  <div class="d-grid">
+    <a class="btn btn-outline-secondary" href="{% url 'accounts:password_change' %}">
+      Change Password
+    </a>
+  </div>
+</div>
+{% endblock %}

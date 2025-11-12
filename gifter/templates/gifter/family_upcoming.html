@@ -1,0 +1,91 @@
+{% extends "index.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+
+  <!-- Header -->
+  <div class="mx-auto" style="max-width:800px;">
+
+    <div class="text-center mb-4">
+      <h1 class="h4 fw-semibold mb-1" style="color:#3b8f88;">
+        Upcoming Events
+      </h1>
+      <div class="text-muted small">
+        Who has a birthday coming up, soonest first.
+      </div>
+    </div>
+
+    <!-- If there are no members or no data -->
+    {% if members|length == 0 %}
+      <div class="alert alert-info text-center">
+        No family members found.
+      </div>
+    {% else %}
+
+      <div class="list-group shadow-sm rounded-3 overflow-hidden">
+
+        {% for row in members %}
+        {% with person=row.profile %}
+          <div class="list-group-item d-flex flex-column flex-sm-row align-items-sm-center justify-content-between">
+
+            <!-- Left side: avatar + name -->
+            <div class="d-flex align-items-center mb-3 mb-sm-0">
+              <img
+                src="{{ person.get_avatar_url }}"
+                class="rounded-circle border me-3"
+                style="width:56px;height:56px;object-fit:cover;"
+                alt="{{ person.user.first_name }} avatar"
+              >
+              <div>
+                <div class="fw-semibold">
+                  {{ person.user.first_name }}
+                  {% if person.user.last_name %} {{ person.user.last_name }}{% endif %}
+                  {% if person.role == person.ROLE_PARENT %}
+                    <span class="badge bg-secondary ms-2">Parent</span>
+                  {% endif %}
+                </div>
+
+                <div class="text-muted small">
+                  {{ row.label }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Right side: actions -->
+            <div class="text-sm-end">
+              <a
+                href="{% url 'gifter:view_wishlist' person.user.username %}"
+                class="btn btn-sm btn-outline-primary w-100 w-sm-auto mb-2 mb-sm-0"
+              >
+                <i class="fa-solid fa-gift me-1"></i>
+                View Wishlist
+              </a>
+
+              {% comment %}
+              For parents we could eventually surface:
+              - Unclaimed items count
+              - "Shop now" shortcut
+              We'll add that later when we expose purchase/claim state.
+              {% endcomment %}
+            </div>
+
+          </div>
+        {% endwith %}
+        {% endfor %}
+
+      </div>
+
+    {% endif %}
+
+    <!-- Back link -->
+    <div class="text-center mt-4">
+      <a href="{% url 'gifter:family_home' %}" class="btn btn-link text-decoration-none">
+        ← Back to Family
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock content %}
+   
