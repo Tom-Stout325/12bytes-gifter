@@ -95,32 +95,6 @@
   </div>
 </div>
 
-<!-- Favorites & Notes -->
-<div class="card mb-4">
-  <div class="card-header fw-semibold">Favorites & Notes</div>
-  <div class="card-body">
-    <div class="mb-3">
-      <label class="form-label">Hobbies / Sports / Interests</label>
-      {{ form.hobbies_sports }}
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Favorite Stores</label>
-      {{ form.favorite_stores }}
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Favorite Websites</label>
-      {{ form.favorite_websites }}
-    </div>
-    {% if form.fields.private_notes %}
-    <div class="mb-3">
-      <label class="form-label">Private Notes (Parent only)</label>
-      {{ form.private_notes }}
-      <div class="form-text text-muted">Only visible to Parent users.</div>
-    </div>
-    {% endif %}
-  </div>
-</div>
-
     <!-- === AVATAR CARD (New UI) === -->
     <div class="card mb-4">
       <div class="card-header fw-semibold d-flex justify-content-between align-items-center">

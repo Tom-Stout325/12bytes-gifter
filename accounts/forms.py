@@ -39,40 +39,38 @@ class RegisterForm(forms.ModelForm):
 # ---------------------------
 
 class ProfileSetupForm(forms.ModelForm):
+    """
+    Onboarding form: role/family/dates + avatar choice + sizes/favorites.
+    Mirrors the fields rendered in profile_setup.html so all inputs persist.
+    Hides private notes for children.
+    """
     class Meta:
         model = Profile
         fields = [
-            # household / role
-            "role", "family",
-
-            # avatar controls used by the template + JS
+            # core setup fields
+            "role", "family", "birthday", "anniversary",
+            # avatar selection
             "avatar_source", "avatar_library_filename", "avatar_upload",
-
-            # personal info shown on the page
-            "birthday", "anniversary",
-
-            # clothing sizes shown on the page
+            # clothing sizes & favorites
             "shirt_size", "pants_size", "shoe_size",
-
-            # favorites & notes (since the template renders them)
-            "hobbies_sports", "favorite_stores", "favorite_websites", "private_notes",
+            "hobbies_sports", "favorite_stores", "favorite_websites",
+            "private_notes",
         ]
         widgets = {
             "role": forms.Select(attrs={"class": "form-select"}),
             "family": forms.Select(attrs={"class": "form-select"}),
+            "birthday": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "anniversary": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
 
-            # avatar widgets to match edit form styling
+            # avatar widgets (consistent with ProfileEditForm)
             "avatar_source": forms.RadioSelect(attrs={"class": "form-check-input"}),
             "avatar_library_filename": forms.HiddenInput(),
             "avatar_upload": forms.ClearableFileInput(attrs={"class": "form-control", "accept": "image/*"}),
 
-            "birthday": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
-            "anniversary": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
-
+            # sizes & favorites
             "shirt_size": forms.TextInput(attrs={"class": "form-control"}),
             "pants_size": forms.TextInput(attrs={"class": "form-control"}),
             "shoe_size": forms.TextInput(attrs={"class": "form-control"}),
-
             "hobbies_sports": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
             "favorite_stores": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
             "favorite_websites": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
@@ -81,8 +79,57 @@ class ProfileSetupForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Family optional for setup
         self.fields["family"].required = False
+
+        # Friendly label for role dropdown
         self.fields["role"].empty_label = "Select your role…"
+
+        # Hide private notes from children
+        if self.instance and self.instance.role == Profile.ROLE_CHILD:
+            self.fields.pop("private_notes", None)
+        class ProfileSetupForm(forms.ModelForm):
+
+            def clean(self):
+                cleaned = super().clean()
+                src = cleaned.get("avatar_source")
+
+                if src == Profile.AVATAR_SOURCE_DEFAULT:
+                    # ignore any previously chosen gallery/upload
+                    cleaned["avatar_library_filename"] = ""
+                    cleaned["avatar_upload"] = None
+
+                elif src == Profile.AVATAR_SOURCE_LIBRARY:
+                    # keep filename, drop upload
+                    cleaned["avatar_upload"] = None
+
+                elif src == Profile.AVATAR_SOURCE_UPLOAD:
+                    # keep upload, drop filename
+                    cleaned["avatar_library_filename"] = ""
+
+                return cleaned
+
+            def save(self, commit=True):
+                """Apply normalization to the instance so it persists exactly as chosen."""
+                obj = super().save(commit=False)
+                src = self.cleaned_data.get("avatar_source")
+
+                if src == Profile.AVATAR_SOURCE_DEFAULT:
+                    obj.avatar_library_filename = ""
+                    obj.avatar_upload = None
+
+                elif src == Profile.AVATAR_SOURCE_LIBRARY:
+                    # filename already in cleaned_data via hidden field
+                    obj.avatar_upload = None
+
+                elif src == Profile.AVATAR_SOURCE_UPLOAD:
+                    obj.avatar_library_filename = ""
+
+                if commit:
+                    obj.save()
+                return obj
+
 
 
 
@@ -165,13 +212,21 @@ class ProfileEditForm(forms.ModelForm):
     def save(self, commit=True):
         profile = super().save(commit=False)
 
-        # Save related user fields
         if self.user:
             self.user.first_name = self.cleaned_data.get("first_name", self.user.first_name)
-            self.user.last_name = self.cleaned_data.get("last_name", self.user.last_name)
-            self.user.username = self.cleaned_data.get("username", self.user.username)
-            self.user.email = self.cleaned_data.get("email", self.user.email)
+            self.user.last_name  = self.cleaned_data.get("last_name",  self.user.last_name)
+            self.user.username   = self.cleaned_data.get("username",   self.user.username)
+            self.user.email      = self.cleaned_data.get("email",      self.user.email)
             self.user.save()
+
+        src = self.cleaned_data.get("avatar_source")
+        if src == Profile.AVATAR_SOURCE_DEFAULT:
+            profile.avatar_library_filename = ""
+            profile.avatar_upload = None
+        elif src == Profile.AVATAR_SOURCE_LIBRARY:
+            profile.avatar_upload = None
+        elif src == Profile.AVATAR_SOURCE_UPLOAD:
+            profile.avatar_library_filename = ""
 
         if commit:
             profile.save()

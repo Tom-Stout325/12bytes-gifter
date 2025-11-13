@@ -1,0 +1,143 @@
+{% extends "index.html" %}
+{% load static %}
+
+{% block title %}Help & Getting Started | Gifter{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 900px;">
+
+  <!-- Logo banner -->
+  <div class="text-center mb-4">
+    <img src="{{ STATIC_URL }}images/logo.png"
+         alt="Gifter Logo"
+         class="img-fluid"
+         style="max-width: 320px;">
+  </div>
+
+  <h1 class="h3 text-center mb-4">Help & Getting Started</h1>
+  <p class="text-muted text-center mb-5">
+    New to Gifter? Follow these steps to create your account, log in, and set up your profile.
+  </p>
+
+  <!-- Register -->
+  <div class="card mb-4">
+    <div class="card-header fw-semibold">
+      1) Register for an Account
+    </div>
+    <div class="card-body">
+      <p>Go to the registration page to create your account.</p>
+      <p class="mb-2"><a href="{% url 'accounts:register' %}" class="btn btn-primary btn-sm">Register</a></p>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="border rounded p-3 h-100">
+            <div class="fw-semibold mb-2">What you’ll enter</div>
+            <ul class="mb-0">
+              <li>First Name</li>
+              <li>Last Name</li>
+              <li>Username (unique)</li>
+              <li>Email</li>
+              <li>Password + Confirm Password</li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="border rounded p-3 h-100">
+            <div class="fw-semibold mb-2">Notes</div>
+            <ul class="mb-0">
+              <li>Your profile will be created automatically.</li>
+              <li>Keep your password private and strong.</li>
+              <li>If your family uses approvals, an admin may need to approve you.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login -->
+  <div class="card mb-4">
+    <div class="card-header fw-semibold">
+      2) Log In
+    </div>
+    <div class="card-body">
+      <p>Already registered? Log in here.</p>
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary btn-sm">Log In</a>
+        <a href="{% url 'accounts:password_reset' %}" class="btn btn-link btn-sm p-0">Forgot password?</a>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="border rounded p-3 h-100">
+            <div class="fw-semibold mb-2">What you’ll enter</div>
+            <ul class="mb-0">
+              <li>Username</li>
+              <li>Password</li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="border rounded p-3 h-100">
+            <div class="fw-semibold mb-2">Tips</div>
+            <ul class="mb-0">
+              <li>After logging in, you’ll be routed where you need to go automatically.</li>
+              <li>If your profile isn’t approved yet, you can still view your profile page.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Setup -->
+  <div class="card mb-4">
+    <div class="card-header fw-semibold">
+      3) Complete Your Profile
+    </div>
+    <div class="card-body">
+      <p>Next, set up the details that help your family pick great gifts.</p>
+      <p class="mb-3">
+        <a href="{% url 'accounts:profile_setup' %}" class="btn btn-outline-secondary btn-sm">Go to Profile Setup</a>
+      </p>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="border rounded p-3 h-100">
+            <div class="fw-semibold mb-2">What you’ll enter</div>
+            <ul class="mb-0">
+              <li><strong>Role</strong> (Parent or Child)</li>
+              <li><strong>Family / Household</strong> (optional at first)</li>
+              <li><strong>Birthday</strong> and <strong>Anniversary</strong> (optional)</li>
+              <li><strong>Avatar</strong>: Default, pick from Gallery, or Upload a photo</li>
+              <li><strong>Sizes</strong>: Shirt, Pants, Shoe</li>
+              <li><strong>Favorites</strong>: Hobbies/Sports, Stores, Websites</li>
+              <li><strong>Private Notes</strong> (Parents only)</li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="border rounded p-3 h-100">
+            <div class="fw-semibold mb-2">How it works</div>
+            <ul class="mb-0">
+              <li>Parents can manage family profiles.</li>
+              <li>Children can’t see private notes—those are visible only to Parents.</li>
+              <li>You can change your avatar anytime (Default, Gallery, or Upload).</li>
+              <li>Click <em>Save</em> to finish. You can always edit later.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert alert-info mt-3 mb-0">
+        After setup, you can visit your profile page. If approval is required, you’ll still see your own profile while it’s pending.
+      </div>
+    </div>
+  </div>
+
+  <!-- Need more help -->
+  <div class="text-center text-muted small">
+    Need more help? Reach out to your family admin or use the site’s contact option.
+  </div>
+</div>
+{% endblock %}

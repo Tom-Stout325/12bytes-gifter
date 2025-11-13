@@ -52,11 +52,16 @@ def add_wishlist_item(request, username):
     target_user = get_object_or_404(User, username=username)
     target_profile = get_object_or_404(Profile, user=target_user)
 
-    if not target_profile.is_approved:
-        messages.error(request, "This profile is not available yet.")
-        if target_user == request.user:
-            return redirect("accounts:profile_edit")
-        return redirect("gifter:all_families")
+
+
+    # if not target_profile.is_approved:
+    #     messages.error(request, "Test")
+    #     if target_user == request.user:
+    #         return redirect("accounts:profile_edit")
+    #     return redirect("gifter:all_families")
+
+
+
 
     if not viewer_profile.can_edit_profile(target_profile):
         messages.error(request, "You do not have permission to add items to this wishlist.")
@@ -90,11 +95,15 @@ def edit_wishlist_item(request, pk):
     target_profile = item.profile
     target_user = target_profile.user
 
-    if not target_profile.is_approved:
-        messages.error(request, "This profile is not available yet.")
-        if target_user == request.user:
-            return redirect("accounts:profile_edit")
-        return redirect("gifter:all_families")
+
+
+    # if not target_profile.is_approved:
+    #     messages.error(request, "Ttest")
+    #     if target_user == request.user:
+    #         return redirect("accounts:profile_edit")
+    #     return redirect("gifter:all_families")
+
+
 
     if not viewer_profile.can_edit_profile(target_profile):
         messages.error(request, "You do not have permission to edit this wishlist.")
@@ -253,11 +262,15 @@ def view_wishlist(request, username):
     target_user = get_object_or_404(User, username=username)
     target_profile = get_object_or_404(Profile, user=target_user)
 
-    if not target_profile.is_approved:
-        messages.error(request, "This profile is not available yet.")
-        if target_user == request.user:
-            return redirect("accounts:profile_edit")
-        return redirect("gifter:all_families")
+
+
+    # if not target_profile.is_approved:
+    #     messages.error(request, "test")
+    #     if target_user == request.user:
+    #         return redirect("accounts:profile_edit")
+    #     return redirect("gifter:all_families")
+
+
 
     # Rendering happens in accounts/profile_detail.html, so forward to that
     return redirect("accounts:profile_detail", username=username)

@@ -9,6 +9,7 @@
       Gifter
     </a>
 
+
     <!-- Mobile Toggle Button -->
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
             aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -18,7 +19,12 @@
     <!-- Collapsible Content -->
     <div class="collapse navbar-collapse" id="mainNav">
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-
+        <li class="nav-item">
+  <a class="nav-link {% if request.resolver_match and request.resolver_match.url_name == 'help' %}active{% endif %}"
+     href="{% url 'accounts:help' %}">
+    <i class="fa-regular fa-circle-question me-1"></i>&nbsp; Help&nbsp;&nbsp;&nbsp;
+  </a>
+</li>
         {% if not request.user.is_authenticated %}
           <!-- Guest links -->
           <li class="nav-item">

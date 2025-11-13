@@ -25,6 +25,12 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+# --- Help page (public) ---
+def help(request):
+    """Public help/FAQ page with getting-started instructions."""
+    return render(request, "accounts/help.html")
+
+
 def _is_admin(user: AbstractBaseUser) -> bool:
     return bool(user.is_superuser or user.is_staff)
 
@@ -240,9 +246,9 @@ def profile_detail(request, username):
     target_profile = get_object_or_404(Profile, user=target_user)
 
     # Viewer can access this page even if pending; enforce template behaviors with helpers
-    if not target_profile.is_approved:
-        messages.error(request, "This profile is not available yet.")
-        return redirect("accounts:profile_edit" if viewer_profile.user == target_user else "accounts:pending_approval")
+    # if not target_profile.is_approved:
+    #     messages.error(request, "Test")
+    #     return redirect("accounts:profile_edit" if viewer_profile.user == target_user else "accounts:pending_approval")
 
     wishlist_items = (
         WishlistItem.objects.filter(profile=target_profile)
