@@ -41,18 +41,49 @@ class RegisterForm(forms.ModelForm):
 class ProfileSetupForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ["role", "family", "birthday", "anniversary"]
+        fields = [
+            # household / role
+            "role", "family",
+
+            # avatar controls used by the template + JS
+            "avatar_source", "avatar_library_filename", "avatar_upload",
+
+            # personal info shown on the page
+            "birthday", "anniversary",
+
+            # clothing sizes shown on the page
+            "shirt_size", "pants_size", "shoe_size",
+
+            # favorites & notes (since the template renders them)
+            "hobbies_sports", "favorite_stores", "favorite_websites", "private_notes",
+        ]
         widgets = {
             "role": forms.Select(attrs={"class": "form-select"}),
             "family": forms.Select(attrs={"class": "form-select"}),
+
+            # avatar widgets to match edit form styling
+            "avatar_source": forms.RadioSelect(attrs={"class": "form-check-input"}),
+            "avatar_library_filename": forms.HiddenInput(),
+            "avatar_upload": forms.ClearableFileInput(attrs={"class": "form-control", "accept": "image/*"}),
+
             "birthday": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "anniversary": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+
+            "shirt_size": forms.TextInput(attrs={"class": "form-control"}),
+            "pants_size": forms.TextInput(attrs={"class": "form-control"}),
+            "shoe_size": forms.TextInput(attrs={"class": "form-control"}),
+
+            "hobbies_sports": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+            "favorite_stores": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+            "favorite_websites": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+            "private_notes": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["family"].required = False
         self.fields["role"].empty_label = "Select your role…"
+
 
 
 # ---------------------------

@@ -12,14 +12,8 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 env = environ.Env()
 env.read_env(str(BASE_DIR / '.env'))
 
-# DEBUG PRINT
-print(f"DEBUG from env: {env.bool('DEBUG')}")
-print(f"Settings module: {__name__}")
-
-
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 DEBUG = env.bool("DEBUG", default=True) 
-
 
 # Allow local .env for development (set ENV_FILE to switch files easily)
 ENV_FILE = os.environ.get("ENV_FILE", BASE_DIR / ".env")

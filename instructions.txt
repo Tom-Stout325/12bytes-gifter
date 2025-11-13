@@ -105,3 +105,15 @@ heroku logs -a gifter-demo --tail
 TURN DEBUG ON/OFF
 heroku config:set DEBUG=True --app gifter-stout
 heroku config:set DEBUG=False --app gifter-stout
+
+
+After Registration
+Login
+   Onboarding:
+        url: accounts/setup/profile 
+        view:  profile_setup
+        template:  profile_setup.html
+
+
+
+

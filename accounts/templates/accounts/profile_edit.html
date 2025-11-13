@@ -1,17 +1,125 @@
 {% extends "index.html" %}
-{% block title %}Set Up Profile | Gifter{% endblock %}
+{% load static %}
+
+{% block title %}
+<!-- DEBUG: PROFILE FORM TEMPLATE - ACCOUNTS APP -->
+
+  {% if setup_mode %}Set Up Profile | Gifter{% else %}Edit Profile | Gifter{% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="container mt-4" style="max-width: 700px;">
-
-  <h2 class="text-secondary mb-3 text-center">Complete Your Profile</h2>
+  <h2 class="text-secondary mb-3 text-center">
+    {% if setup_mode %}Set Up Your Profile{% else %}Edit Your Profile{% endif %}
+  </h2>
   <p class="text-muted text-center mb-4">
-    This helps your family pick great gifts for you.
+    {% if setup_mode %}
+      Add your info and avatar so your family can pick the perfect gifts for you.
+    {% else %}
+      Update your info and avatar so your family can pick the perfect gifts for you.
+    {% endif %}
   </p>
 
   <form method="post" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
     {{ form.non_field_errors }}
+    <!-- === USER INFO CARD === -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Your Account</div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">First Name</label>
+            {{ form.first_name }} {{ form.first_name.errors }}
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Last Name</label>
+            {{ form.last_name }} {{ form.last_name.errors }}
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Username <span class="text-danger">*</span></label>
+          {{ form.username }} {{ form.username.errors }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email Address</label>
+          {{ form.email }} {{ form.email.errors }}
+          <div class="form-text text-muted">Used for login and notifications.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === HOUSEHOLD === -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">Household</div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Family / Household</label>
+          {{ form.family }} {{ form.family.errors }}
+        </div>
+        <div class="mb-0">
+          <label class="form-label">Role</label>
+          {{ form.role }} {{ form.role.errors }}
+          <div class="form-text">Parents can manage family profiles.</div>
+        </div>
+      </div>
+    </div>
+<!-- Personal Info -->
+<div class="card mb-4">
+  <div class="card-header fw-semibold">Personal Info</div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-sm-6 mb-3">
+        <label class="form-label">Birthday</label>
+        {{ form.birthday }} {{ form.birthday.errors }}
+      </div>
+      <div class="col-sm-6 mb-3">
+        <label class="form-label">Anniversary (optional)</label>
+        {{ form.anniversary }} {{ form.anniversary.errors }}
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-4 mb-3">
+        <label class="form-label">Shirt Size</label>
+        {{ form.shirt_size }}
+      </div>
+      <div class="col-sm-4 mb-3">
+        <label class="form-label">Pants Size</label>
+        {{ form.pants_size }}
+      </div>
+      <div class="col-sm-4 mb-3">
+        <label class="form-label">Shoe Size</label>
+        {{ form.shoe_size }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Favorites & Notes -->
+<div class="card mb-4">
+  <div class="card-header fw-semibold">Favorites & Notes</div>
+  <div class="card-body">
+    <div class="mb-3">
+      <label class="form-label">Hobbies / Sports / Interests</label>
+      {{ form.hobbies_sports }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Favorite Stores</label>
+      {{ form.favorite_stores }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Favorite Websites</label>
+      {{ form.favorite_websites }}
+    </div>
+    {% if form.fields.private_notes %}
+    <div class="mb-3">
+      <label class="form-label">Private Notes (Parent only)</label>
+      {{ form.private_notes }}
+      <div class="form-text text-muted">Only visible to Parent users.</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
 
     <!-- === AVATAR CARD (New UI) === -->
     <div class="card mb-4">
@@ -21,8 +129,6 @@
       </div>
 
       <div class="card-body">
-
-        <!-- Current avatar + source badge + change button -->
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
           <div class="d-flex align-items-center">
             <img id="activeAvatarPreviewImg"
@@ -38,33 +144,28 @@
             </span>
           </div>
 
-          <div class="d-flex align-items-center gap-2">
-            <button type="button"
-                    class="btn btn-primary btn-sm"
-                    data-bs-toggle="modal"
-                    data-bs-target="#avatarPickerModal">
-              Change avatar
-            </button>
-          </div>
+          <button type="button"
+                  class="btn btn-primary btn-sm"
+                  data-bs-toggle="modal"
+                  data-bs-target="#avatarPickerModal">
+            Change avatar
+          </button>
         </div>
 
-        <!-- Small helper text -->
-        <div class="text-muted small mb-2">This is how you’ll appear</div>
+        <div class="text-muted small mb-2">This is how you'll appear</div>
 
-        <!-- Hidden field for gallery filename -->
-        {{ form.avatar_library_filename }}
-        {{ form.avatar_library_filename.errors }}
+        <!-- Hidden field for library filename -->
+        {{ form.avatar_library_filename }} {{ form.avatar_library_filename.errors }}
 
-        <!-- Avatar source radios (kept, visually hidden but functional) -->
+        <!-- Avatar source radios (kept for form, visually hidden) -->
         <div class="visually-hidden">
           {{ form.avatar_source }}
         </div>
 
-        <!-- Upload section (only shows if "upload" is active) -->
+        <!-- Upload section -->
         <div id="avatarUploadSection" class="border rounded p-3 mb-2" style="display:none;">
           <div class="fw-semibold mb-2">Upload your own image</div>
-          {{ form.avatar_upload }}
-          {{ form.avatar_upload.errors }}
+          {{ form.avatar_upload }} {{ form.avatar_upload.errors }}
 
           {% if form.instance.avatar_source == "upload" and form.instance.avatar_upload %}
           <div class="mt-3 d-flex align-items-center">
@@ -72,45 +173,13 @@
                  alt="Current uploaded avatar"
                  class="rounded-circle me-3 border"
                  style="width:60px;height:60px;object-fit:cover;">
-            <div class="text-muted small">Current avatar</div>
+            <div class="text-muted small">Current uploaded avatar</div>
           </div>
           {% endif %}
         </div>
 
         <div class="form-text">
-          Default avatars ship with Gifter. Uploads are private to your family.
-        </div>
-      </div>
-    </div>
-
-    <!-- === PERSONAL INFO === -->
-    <div class="card mb-4">
-      <div class="card-header fw-semibold">Personal Info</div>
-      <div class="card-body">
-        <div class="row">
-          <div class="col-sm-6 mb-3">
-            <label class="form-label">Birthday</label>
-            {{ form.birthday }} {{ form.birthday.errors }}
-          </div>
-          <div class="col-sm-6 mb-3">
-            <label class="form-label">Anniversary (optional)</label>
-            {{ form.anniversary }} {{ form.anniversary.errors }}
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="col-sm-4 mb-3">
-            <label class="form-label">Shirt Size</label>
-            {{ form.shirt_size }}
-          </div>
-          <div class="col-sm-4 mb-3">
-            <label class="form-label">Pants Size</label>
-            {{ form.pants_size }}
-          </div>
-          <div class="col-sm-4 mb-3">
-            <label class="form-label">Shoe Size</label>
-            {{ form.shoe_size }}
-          </div>
+          Default avatars live in <code>static/images/avatars/</code>. Uploads are private to your family.
         </div>
       </div>
     </div>
@@ -123,30 +192,27 @@
           <label class="form-label">Hobbies / Sports / Interests</label>
           {{ form.hobbies_sports }}
         </div>
-
         <div class="mb-3">
           <label class="form-label">Favorite Stores</label>
           {{ form.favorite_stores }}
         </div>
-
         <div class="mb-3">
           <label class="form-label">Favorite Websites</label>
           {{ form.favorite_websites }}
         </div>
-
         {% if form.fields.private_notes %}
         <div class="mb-3">
           <label class="form-label">Private Notes (Parent only)</label>
           {{ form.private_notes }}
-          <div class="form-text text-muted">
-            Only visible to Parent users.
-          </div>
+          <div class="form-text text-muted">Only visible to Parent users.</div>
         </div>
         {% endif %}
       </div>
     </div>
 
-    <button type="submit" class="btn btn-primary w-100 mb-4">Save Profile</button>
+    <button type="submit" class="btn btn-primary w-100 mb-4">
+      {% if setup_mode %}Complete Setup{% else %}Save Profile{% endif %}
+    </button>
   </form>
 </div>
 
@@ -160,8 +226,6 @@
       </div>
 
       <div class="modal-body">
-
-        <!-- Mode choices -->
         <div class="list-group mb-3">
           <button type="button" class="list-group-item list-group-item-action d-flex align-items-center justify-content-between avatar-mode-btn" data-mode="default">
             <div>
@@ -188,7 +252,6 @@
           </button>
         </div>
 
-        <!-- Gallery grid (shown only when mode=gallery) -->
         <div id="gallerySection" style="display:none;">
           <p class="text-muted small mb-2">Click an avatar to select it.</p>
           <div class="row row-cols-3 row-cols-sm-4 row-cols-md-6 g-3">

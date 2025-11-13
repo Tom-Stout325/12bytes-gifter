@@ -6,6 +6,10 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.conf import settings
+import os
+from django.contrib.auth.models import AbstractBaseUser
+
 
 from .forms import (
     RegisterForm,
@@ -17,8 +21,12 @@ from .forms import (
 from .models import Profile, Family
 from gifter.models import WishlistItem  # used in profile_detail
 
+from django.contrib.auth import get_user_model
 User = get_user_model()
 
+
+def _is_admin(user: AbstractBaseUser) -> bool:
+    return bool(user.is_superuser or user.is_staff)
 
 # ---------------------------
 # Helpers
@@ -36,8 +44,8 @@ def _profile_complete(profile: Profile) -> bool:
     return True  # default avatar counts
 
 
-def _is_admin(user: User) -> bool:
-    return bool(user.is_superuser or user.is_staff)
+# def _is_admin(user: User) -> bool:
+#     return bool(user.is_superuser or user.is_staff)
 
 
 
@@ -115,18 +123,26 @@ def post_login_redirect(request):
 @login_required
 def profile_setup(request):
     """
-    Onboarding: select role/family (parents optional), optional dates.
+    Onboarding: select role/family (parents optional), optional dates, avatar pick/upload.
     If role=Parent and a family is chosen, atomically assign the next open parent slot.
     """
-    profile, _ = Profile.objects.get_or_create(user=request.user, defaults={"is_approved": False})
+    profile, _ = Profile.objects.get_or_create(
+        user=request.user,
+        defaults={"is_approved": False},
+    )
 
     if request.method == "POST":
-        form = ProfileSetupForm(request.POST, instance=profile)
+        form = ProfileSetupForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             prof = form.save(commit=False)
+
+            # Assign parent slot if applicable
             if prof.role == Profile.ROLE_PARENT and prof.family_id:
                 with transaction.atomic():
-                    Family.objects.select_for_update().get(pk=prof.family_id).assign_parent_slot(request.user)
+                    Family.objects.select_for_update().get(
+                        pk=prof.family_id
+                    ).assign_parent_slot(request.user)
+
             prof.save()
             messages.success(request, "Profile saved.")
 
@@ -142,7 +158,26 @@ def profile_setup(request):
     else:
         form = ProfileSetupForm(instance=profile)
 
-    return render(request, "accounts/profile_setup.html", {"form": form, "profile": profile})
+    # Build avatar gallery list for the modal
+    avatar_dir = os.path.join(settings.BASE_DIR, "static", "images", "avatars", "users")
+    try:
+        available_avatars = sorted(
+            f for f in os.listdir(avatar_dir)
+            if f.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".webp"))
+        )
+    except FileNotFoundError:
+        available_avatars = []
+
+    return render(
+        request,
+        "accounts/profile_setup.html",
+        {
+            "form": form,
+            "profile": profile,
+            "available_avatars": available_avatars,
+        },
+    )
+
 
 
 @login_required
@@ -167,7 +202,23 @@ def profile_edit(request):
     else:
         form = ProfileEditForm(instance=profile, user=request.user, viewer_profile=profile)
 
-    return render(request, "accounts/profile_form.html", {"form": form, "profile": profile, "setup_mode": False})
+    avatar_dir = os.path.join(settings.BASE_DIR, 'static', 'images', 'avatars', 'users')
+    available_avatars = sorted([
+        f for f in os.listdir(avatar_dir)
+        if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif'))
+    ])
+
+    return render(
+        request,
+        "accounts/profile_edit.html",
+        {
+            "form": form,
+            "profile": profile,
+            "setup_mode": False,
+            "available_avatars": available_avatars,
+        },
+    )
+
 
 
 @login_required
