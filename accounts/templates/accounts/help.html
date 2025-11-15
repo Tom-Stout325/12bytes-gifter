@@ -47,7 +47,7 @@
             <ul class="mb-0">
               <li>Your profile will be created automatically.</li>
               <li>Keep your password private and strong.</li>
-              <li>If your family uses approvals, an admin may need to approve you.</li>
+              <li>Your account will need to be approved by the admin before you have full acess.</li>
             </ul>
           </div>
         </div>
@@ -135,9 +135,227 @@
     </div>
   </div>
 
+
+  <!-- 1) Register -->
+  <div class="card mb-4">
+    <div class="card-header fw-semibold">
+      1) Register for an Account
+    </div>
+    <div class="card-body">
+      <p>Go to the registration page to create your account.</p>
+      <p class="mb-2">
+        <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-sm">Register</a>
+      </p>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="border rounded p-3 h-100">
+            <div class="fw-semibold mb-2">What you’ll enter</div>
+            <ul class="mb-0">
+              <li>First Name</li>
+              <li>Last Name</li>
+              <li>Username (unique)</li>
+              <li>Email</li>
+              <li>Password + Confirm Password</li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="border rounded p-3 h-100">
+            <div class="fw-semibold mb-2">Notes</div>
+            <ul class="mb-0">
+              <li>Your profile will be created automatically.</li>
+              <li>Keep your password private and strong.</li>
+              <li>Your account may need to be approved by the admin before you have full access.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2) Login -->
+  <div class="card mb-4">
+    <div class="card-header fw-semibold">
+      2) Log In
+    </div>
+    <div class="card-body">
+      <p>Already registered? Log in here.</p>
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary btn-sm">Log In</a>
+        <a href="{% url 'accounts:password_reset' %}" class="btn btn-link btn-sm p-0">Forgot password?</a>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="border rounded p-3 h-100">
+            <div class="fw-semibold mb-2">What you’ll enter</div>
+            <ul class="mb-0">
+              <li>Username</li>
+              <li>Password</li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="border rounded p-3 h-100">
+            <div class="fw-semibold mb-2">Tips</div>
+            <ul class="mb-0">
+              <li>After logging in, you’ll be routed where you need to go automatically.</li>
+              <li>If your profile isn’t approved yet, you can still view your profile page.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3) Complete Your Profile (rescripted) -->
+  <div class="card mb-4">
+    <div class="card-header fw-semibold">
+      3) Complete Your Profile
+    </div>
+    <div class="card-body">
+      <p>
+        Your profile is how your family learns about you at a glance. Filling it out makes it easier
+        for everyone to pick gifts you’ll actually love.
+      </p>
+      <p class="mb-3">
+        <a href="{% url 'accounts:profile_setup' %}" class="btn btn-outline-secondary btn-sm">
+          Go to Profile Setup
+        </a>
+      </p>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="border rounded p-3 h-100">
+            <div class="fw-semibold mb-2">Profile details you can add</div>
+            <ul class="mb-0">
+              <li>
+                <strong>Role (Parent or Child)</strong> – determines what you can see and manage in the family.
+              </li>
+              <li>
+                <strong>Family / Household</strong> – connects you to the right group so your wishlists show
+                up for the right people.
+              </li>
+              <li>
+                <strong>Birthday &amp; Anniversary</strong> – used to highlight important dates so your family
+                sees what’s coming up next.
+              </li>
+              <li>
+                <strong>Avatar</strong> – pick a default, choose from the gallery, or upload a photo so people
+                can quickly recognize you.
+              </li>
+              <li>
+                <strong>Sizes</strong> – shirt, pants, and shoe sizes help gift-givers buy clothes that actually fit.
+              </li>
+              <li>
+                <strong>Favorites</strong> – list your hobbies, sports, favorite stores, and websites to give
+                everyone easy gift ideas.
+              </li>
+              <li>
+                <strong>Private Notes (Parents only)</strong> – parents can store extra notes about children
+                that kids won’t see, but other parents can use when shopping.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="border rounded p-3 h-100">
+            <div class="fw-semibold mb-2">Why this matters</div>
+            <ul class="mb-0">
+              <li>Your details drive the reminders and “Coming Up Next” sections for your family.</li>
+              <li>Sizes and favorites keep people from guessing and buying things you won’t use.</li>
+              <li>Parents can manage and update child profiles as things change over time.</li>
+              <li>You can come back to this page anytime to update your info as your interests change.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert alert-info mt-3 mb-0">
+        After you save your profile, you can visit your profile page to review everything.
+        If approval is required, you’ll still be able to see your own profile while it’s pending.
+      </div>
+    </div>
+  </div>
+
+  <!-- 4) Create & Use Wishlists -->
+  <div class="card mb-4">
+    <div class="card-header fw-semibold">
+      4) Create &amp; Use Wishlists
+    </div>
+    <div class="card-body">
+      <p>
+        Once your profile is set up, the next step is to create wishlists. Wishlists tell your family
+        what you’d actually like to receive and help avoid duplicate or unwanted gifts.
+      </p>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <div class="border rounded p-3 h-100">
+            <div class="fw-semibold mb-2">How to add wishlist items</div>
+            <ol class="mb-0 ps-3">
+              <li>Go to your profile page after logging in.</li>
+              <li>Open your wishlist area or tab.</li>
+              <li>Use the “Add” button to create a new wishlist item.</li>
+              <li>Fill in the item name, optional details (size, color, links, notes, etc.).</li>
+              <li>Save the item. It will appear on your wishlist for your family to see.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="border rounded p-3 h-100">
+            <div class="fw-semibold mb-2">What to include in an item</div>
+            <ul class="mb-0">
+              <li><strong>Item name</strong> – what you want (e.g., “Wireless headphones”).</li>
+              <li><strong>Details</strong> – brand, color, size, or anything that matters.</li>
+              <li><strong>Links</strong> – optional store links to make it easy to buy.</li>
+              <li><strong>Notes</strong> – anything else that will help someone pick the right version.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <h6 class="fw-semibold mt-2 mb-2">Who can see what?</h6>
+      <div class="border rounded p-3 mb-3">
+        <ul class="mb-0">
+          <li>
+            <strong>Your own wishlist</strong> – you can see all of your items and their details,
+            but you will not see who has claimed items for you (no spoilers).
+          </li>
+          <li>
+            <strong>Other people’s wishlists</strong> – family members can view each other’s wishlists
+            to get ideas and claim gifts.
+          </li>
+          <li>
+            <strong>Claiming gifts</strong> – when someone claims an item, other shoppers with access
+            can see that it’s taken so they don’t buy the same thing.
+          </li>
+          <li>
+            <strong>Children &amp; surprises</strong> – children won’t see who claimed items on
+            their own wishlist, which keeps the surprise for special occasions.
+          </li>
+          <li>
+            <strong>Parents</strong> – parents can usually see more detail (including claims) so they
+            can coordinate gifts and avoid duplicates.
+          </li>
+        </ul>
+      </div>
+
+      <div class="alert alert-success mb-0">
+        Tip: Keep your wishlist updated year-round. Adding ideas as you think of them makes birthdays
+        and holidays easier for everyone.
+      </div>
+    </div>
+  </div>
+
   <!-- Need more help -->
   <div class="text-center text-muted small">
     Need more help? Reach out to your family admin or use the site’s contact option.
   </div>
 </div>
 {% endblock %}
+
+
