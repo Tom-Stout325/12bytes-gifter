@@ -16,24 +16,34 @@ ADMIN_NOTIFY_EMAIL = "tom@tom-stout.com"
 def create_profile_on_user_create(sender, instance: User, created: bool, **kwargs):
     """
     Ensure every new User gets a Profile row with is_approved=False.
-    (Views/forms handle the rest of onboarding.)
+    Also set safe defaults for avatar fields so we don't violate NOT NULL.
     """
     if not created:
         return
-    Profile.objects.get_or_create(user=instance, defaults={"is_approved": False})
 
-    # Optional: you could move the "new registration" email here instead of the view.
-    # Keeping it here is fine; if you prefer, remove from views.register().
+    Profile.objects.get_or_create(
+        user=instance,
+        defaults={
+            "is_approved": False,
+            "avatar_source": Profile.AVATAR_SOURCE_DEFAULT,
+            "avatar_choice": "",  # important: avoids NULL insert into NOT NULL column
+        },
+    )
+
+    # Notify admin of a new registration
     try:
         send_mail(
             subject="Gifter: New registration pending approval",
-            message=f"A new user has registered:\n\n"
-                    f"Name: {instance.get_full_name() or instance.username}\n"
-                    f"Email: {instance.email or '(none provided)'}\n\n"
-                    f"Approve in Django Admin when ready.",
+            message=(
+                "A new user has registered:\n\n"
+                f"Name: {instance.get_full_name() or instance.username}\n"
+                f"Email: {instance.email or '(none provided)'}\n\n"
+                "Approve in Django Admin when ready."
+            ),
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[ADMIN_NOTIFY_EMAIL],
             fail_silently=True,
         )
     except Exception:
+        # Swallow email problems; we don't want them to break registration
         pass
