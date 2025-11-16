@@ -134,9 +134,13 @@
             class="badge bg-emphasis text-dark fw-semibold"
             style="font-size: 0.8rem"
           >
-            {{ request.user.first_name }}{% if request.user.last_name %} {{
-            request.user.last_name }}{% endif %} {% if p.role == "Parent" %} ·
-            {{ p.role }}{% endif %}
+            {{ request.user.first_name }}
+              {% if request.user.last_name %} 
+                {{request.user.last_name }}
+              {% endif %} 
+              {% if p.role == "Parent" %} ·
+                {{ p.role }}
+              {% endif %}
           </span>
         </li>
 
