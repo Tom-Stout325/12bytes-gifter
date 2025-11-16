@@ -3,15 +3,12 @@
 
 {% block content %}
 <style>
-  body, html {
-    height: 100%;
-    margin: 0;
-    font-family: 'Montserrat', sans-serif;
+  .home-wrapper {
+    min-height: 100vh;
   }
 
   .hero-section {
-    url: ("{% static 'images/splash-bg.jpg' %}") center center / cover no-repeat;
-    height: 100vh;
+    background: url("{% static 'images/splash-bg.jpg' %}") center center / cover no-repeat;
     color: #fff;
     display: flex;
     align-items: center;
@@ -62,46 +59,48 @@
   .hero-buttons a.btn-outline-light {
     color: #3b8f88;
     border-color: #3b8f88;
+    background-color: #F4AC45;
   }
 
   .hero-buttons a.btn-outline-light:hover {
-    background-color: #F4AC45;
-    color: #3b8f88;
+    background-color: #f8c066;
+    color: #2d6e68;
   }
 
-  footer.hero-footer {
-    position: absolute;
-    bottom: 1rem;
-    width: 100%;
-    text-align: center;
-    color: #ddd;
+  .hero-footer {
     font-size: 0.9rem;
+    color: #666;
   }
 </style>
 
-<div class="hero-section">
-  <!-- Logo -->
-  <img src="{% static 'images/logo.png' %}" alt="Gifter Logo" class="hero-logo">
+<div class="home-wrapper d-flex flex-column">
 
-  <!-- Title and tagline -->
-  <h1 class="hero-title">Welcome to Gifter</h1>
-  <p class="hero-subtitle">
-    A private family gift organizer — share wishlists and make gift-giving - and receiving - easy!
-  </p>
+  <!-- Main hero content grows to fill available height -->
+  <section class="hero-section flex-grow-1">
+    <!-- Logo -->
+    <img src="{% static 'images/logo.png' %}" alt="Gifter Logo" class="hero-logo">
 
-  <!-- Buttons -->
-  <div class="hero-buttons d-flex flex-column flex-sm-row gap-3 justify-content-center">
-    <a href="{% url 'accounts:login' %}" class="btn btn-primary shadow">
-      <i class="fa-solid fa-right-to-bracket me-2"></i> Login
-    </a>
-    <a href="{% url 'accounts:register' %}" class="btn btn-outline shadow" style="background-color: #F4AC45; color: #3b8f88;">
-      <i class="fa-solid fa-user-plus me-2"></i> Register
-    </a>
-  </div>
+    <!-- Title and tagline -->
+    <h1 class="hero-title">Welcome to Gifter</h1>
+    <p class="hero-subtitle">
+      A private family gift organizer — share wishlists and make gift-giving (and receiving) easy!
+    </p>
 
-  <!-- Footer -->
-  <footer class="hero-footer">
+    <!-- Buttons -->
+    <div class="hero-buttons d-flex flex-column flex-sm-row gap-3 justify-content-center">
+      <a href="{% url 'accounts:login' %}" class="btn btn-primary shadow">
+        <i class="fa-solid fa-right-to-bracket me-2"></i> Login
+      </a>
+      <a href="{% url 'accounts:register' %}" class="btn btn-outline-light shadow">
+        <i class="fa-solid fa-user-plus me-2"></i> Register
+      </a>
+    </div>
+  </section>
+
+  <!-- Sticky footer for this page only -->
+  <footer class="hero-footer text-center py-3 mt-auto bg-light">
     Created by <strong>Tom Stout</strong> — 12bytes • Gifter App © {{ now|date:"Y" }}
   </footer>
+
 </div>
 {% endblock %}
