@@ -40,15 +40,15 @@
             Help&nbsp;&nbsp;&nbsp;
           </a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.url_name == 'occasions_month' %}active{% endif %}"
-            href="{% url 'accounts:occasions_month' %}">
-            <i class="fa-solid fa-calendar-day me-1"></i>
-            Calendar
-          </a>
-        </li>
-
+        
         {% if not request.user.is_authenticated %}
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'occasions_month' %}active{% endif %}"
+              href="{% url 'accounts:occasions_month' %}">
+              <i class="fa-solid fa-calendar-day me-1"></i>
+              Calendar
+            </a>
+          </li>
           <!-- Guest links -->
           <li class="nav-item">
             <a class="nav-link" href="{% url 'accounts:login' %}">
@@ -132,15 +132,14 @@
         <li class="nav-item d-flex align-items-center ms-lg-3 mt-2 mt-lg-0">
           <span
             class="badge bg-emphasis text-dark fw-semibold"
-            style="font-size: 0.8rem"
-          >
-            {{ request.user.first_name }}
-              {% if request.user.last_name %} 
-                {{ request.user.last_name }}
-              {% endif %} 
-              {% if p.role == "Parent" %} ·
-                {{ p.role }}
-              {% endif %}
+            style="font-size: 0.8rem">
+          {{ request.user.first_name }}
+          {% if request.user.last_name %} 
+            {{ request.user.last_name }}
+          {% endif %} 
+          {% if p.role == "Parent" %} ·
+            {{ p.role }}
+          {% endif %}
           </span>
         </li>
 
