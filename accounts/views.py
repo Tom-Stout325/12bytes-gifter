@@ -9,7 +9,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.conf import settings
 import os
 from django.contrib.auth.models import AbstractBaseUser
-
+from django.utils import timezone
+from datetime import date
+import calendar
 
 from .forms import (
     RegisterForm,
@@ -334,3 +336,125 @@ def family_manage_update(request, pk: int):
     else:
         form = FamilySetupForm(instance=fam)
     return render(request, "accounts/family_manage_form.html", {"form": form, "family": fam})
+
+
+
+def _shift_month(year: int, month: int, delta: int) -> tuple[int, int]:
+    """
+    Move forward/backward by `delta` months.
+    Returns (new_year, new_month).
+    """
+    new_month = month + delta
+    new_year = year + (new_month - 1) // 12
+    new_month = ((new_month - 1) % 12) + 1
+    return new_year, new_month
+
+
+@login_required
+def occasions_month(request):
+    """
+    Show birthdays and anniversaries for a given month, grouped by day.
+    Scope: the current user's family.
+    """
+    today = timezone.localdate()
+
+    # Get month/year from querystring or default to current month
+    try:
+        year = int(request.GET.get("year", today.year))
+        month = int(request.GET.get("month", today.month))
+    except ValueError:
+        year = today.year
+        month = today.month
+
+    # Sanity-check month bounds
+    if month < 1 or month > 12:
+        year = today.year
+        month = today.month
+
+    first_of_month = date(year, month, 1)
+    last_day = calendar.monthrange(year, month)[1]
+    last_of_month = date(year, month, last_day)
+
+    # Who do we include? For now: everyone in the viewer's family
+    viewer_profile = request.user.profile
+    family = viewer_profile.family
+
+    profiles_qs = Profile.objects.select_related("user").all()
+    if family is not None:
+        profiles_qs = profiles_qs.filter(family=family)
+    else:
+        # If user isn't assigned to a family yet, just show their own dates
+        profiles_qs = profiles_qs.filter(pk=viewer_profile.pk)
+
+    # Build a flat list of "events" (birthdays + anniversaries) in this month
+    events = []
+
+    for profile in profiles_qs:
+        # Birthday
+        if profile.birthday:
+            try:
+                bday_this_year = profile.birthday.replace(year=year)
+            except ValueError:
+                # Handle Feb 29 on non-leap years by skipping or adjusting.
+                # For now, skip to keep logic simple.
+                bday_this_year = None
+
+            if bday_this_year and bday_this_year.month == month:
+                turning_age = year - profile.birthday.year
+                events.append(
+                    {
+                        "date": bday_this_year,
+                        "kind": "birthday",
+                        "profile": profile,
+                        "age": turning_age,
+                        "years": None,
+                    }
+                )
+
+        # Anniversary
+        if profile.anniversary:
+            try:
+                anniv_this_year = profile.anniversary.replace(year=year)
+            except ValueError:
+                anniv_this_year = None
+
+            if anniv_this_year and anniv_this_year.month == month:
+                years_married = year - profile.anniversary.year
+                events.append(
+                    {
+                        "date": anniv_this_year,
+                        "kind": "anniversary",
+                        "profile": profile,
+                        "age": None,
+                        "years": years_married,
+                    }
+                )
+
+    # Sort events by date (and maybe by name/kind for consistent ordering)
+    events.sort(key=lambda e: (e["date"], e["kind"], e["profile"].user.first_name or ""))
+
+    # Group events by date for easier display in the template
+    grouped_events = {}
+    for event in events:
+        grouped_events.setdefault(event["date"], []).append(event)
+
+    # Prev / next month links
+    prev_year, prev_month = _shift_month(year, month, -1)
+    next_year, next_month = _shift_month(year, month, +1)
+
+    context = {
+        "month_year_label": first_of_month.strftime("%B %Y"),  # "October 2025"
+        "year": year,
+        "month": month,
+        "grouped_events": grouped_events,  # dict[date -> list[events]]
+        "first_of_month": first_of_month,
+        "last_of_month": last_of_month,
+        "prev_year": prev_year,
+        "prev_month": prev_month,
+        "next_year": next_year,
+        "next_month": next_month,
+        "today": today,
+        "viewer_profile": viewer_profile,
+    }
+
+    return render(request, "accounts/occasions_month.html", context)

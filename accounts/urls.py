@@ -28,6 +28,9 @@ urlpatterns = [
     path("families/manage/new/", views.family_manage_create, name="family_manage_create"),
     path("families/manage/<int:pk>/", views.family_manage_update, name="family_manage_update"),
 
+    path("occasions/", views.occasions_month, name="occasions_month",),
+
+    
     # Password management (link these from your edit page)
     path(
         "password/change/",
