@@ -38,11 +38,6 @@
     </div>
   </div>
 
-  <!-- Intro text -->
-  <p class="text-muted small mb-4 text-center">
-    Showing birthdays and anniversaries for <strong>{{ month_year_label }}</strong> across all families.
-  </p>
-
   {% if grouped_events %}
     <div class="d-flex flex-column gap-3">
       {% for day, events in grouped_events.items %}
