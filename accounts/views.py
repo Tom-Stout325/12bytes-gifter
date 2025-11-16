@@ -338,10 +338,19 @@ def family_manage_update(request, pk: int):
     return render(request, "accounts/family_manage_form.html", {"form": form, "family": fam})
 
 
+from datetime import date
+import calendar
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from django.utils import timezone
+
+from .models import Profile
+
 
 def _shift_month(year: int, month: int, delta: int) -> tuple[int, int]:
     """
-    Move forward/backward by `delta` months.
+    Move forward or backward by `delta` months.
     Returns (new_year, new_month).
     """
     new_month = month + delta
@@ -354,7 +363,8 @@ def _shift_month(year: int, month: int, delta: int) -> tuple[int, int]:
 def occasions_month(request):
     """
     Show birthdays and anniversaries for a given month, grouped by day.
-    Scope: the current user's family.
+
+    Scope: all approved profiles in the system (not just the viewer's family).
     """
     today = timezone.localdate()
 
@@ -362,11 +372,11 @@ def occasions_month(request):
     try:
         year = int(request.GET.get("year", today.year))
         month = int(request.GET.get("month", today.month))
-    except ValueError:
+    except (TypeError, ValueError):
         year = today.year
         month = today.month
 
-    # Sanity-check month bounds
+    # Ensure month is sane
     if month < 1 or month > 12:
         year = today.year
         month = today.month
@@ -375,19 +385,16 @@ def occasions_month(request):
     last_day = calendar.monthrange(year, month)[1]
     last_of_month = date(year, month, last_day)
 
-    # Who do we include? For now: everyone in the viewer's family
     viewer_profile = request.user.profile
-    family = viewer_profile.family
 
-    profiles_qs = Profile.objects.select_related("user").all()
-    if family is not None:
-        profiles_qs = profiles_qs.filter(family=family)
-    else:
-        # If user isn't assigned to a family yet, just show their own dates
-        profiles_qs = profiles_qs.filter(pk=viewer_profile.pk)
+    # All approved profiles, system-wide
+    profiles_qs = (
+        Profile.objects
+        .select_related("user", "family")
+        .filter(is_approved=True)
+    )
 
-    # Build a flat list of "events" (birthdays + anniversaries) in this month
-    events = []
+    events: list[dict] = []
 
     for profile in profiles_qs:
         # Birthday
@@ -395,8 +402,7 @@ def occasions_month(request):
             try:
                 bday_this_year = profile.birthday.replace(year=year)
             except ValueError:
-                # Handle Feb 29 on non-leap years by skipping or adjusting.
-                # For now, skip to keep logic simple.
+                # e.g. Feb 29 on a non-leap year – skip for now
                 bday_this_year = None
 
             if bday_this_year and bday_this_year.month == month:
@@ -430,23 +436,30 @@ def occasions_month(request):
                     }
                 )
 
-    # Sort events by date (and maybe by name/kind for consistent ordering)
-    events.sort(key=lambda e: (e["date"], e["kind"], e["profile"].user.first_name or ""))
+    # Sort events by date, then kind, then name
+    events.sort(
+        key=lambda e: (
+            e["date"],
+            e["kind"],
+            (e["profile"].user.first_name or ""),
+            (e["profile"].user.last_name or ""),
+        )
+    )
 
-    # Group events by date for easier display in the template
-    grouped_events = {}
+    # Group by date in insertion order
+    grouped_events: dict[date, list[dict]] = {}
     for event in events:
         grouped_events.setdefault(event["date"], []).append(event)
 
-    # Prev / next month links
+    # Prev / next month
     prev_year, prev_month = _shift_month(year, month, -1)
     next_year, next_month = _shift_month(year, month, +1)
 
     context = {
-        "month_year_label": first_of_month.strftime("%B %Y"),  # "October 2025"
+        "month_year_label": first_of_month.strftime("%B %Y"),  # e.g. "November 2025"
         "year": year,
         "month": month,
-        "grouped_events": grouped_events,  # dict[date -> list[events]]
+        "grouped_events": grouped_events,
         "first_of_month": first_of_month,
         "last_of_month": last_of_month,
         "prev_year": prev_year,

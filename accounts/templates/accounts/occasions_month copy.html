@@ -4,25 +4,12 @@
 {% block content %}
 <div class="container py-4">
 
-  <!-- Hero logo + heading -->
-  <div class="text-center mb-4">
-    <!-- Gifter logo -->
-    <img src="{% static 'images/logo.png' %}" alt="Gifter Logo"
-         class="img-fluid mx-auto d-block mb-4" style="max-width: 260px;">
-
-    <!-- Main heading -->
-    <h1 class="h3 fw-semibold mb-1" style="color:#3b8f88;">
-      Birthdays &amp; Anniversaries
+  <!-- Header + Month Navigation -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-2 mb-sm-0" style="color:#3b8f88;">
+      Monthly Events
     </h1>
 
-    <!-- Month + year as sub-heading -->
-    <p class="h6 text-muted mb-0">
-      {{ month_year_label }}
-    </p>
-  </div>
-
-  <!-- Month navigation -->
-  <div class="d-flex justify-content-center mb-4">
     <div class="btn-group" role="group" aria-label="Month navigation">
       <a class="btn btn-outline-secondary btn-sm"
          href="{% url 'accounts:occasions_month' %}?year={{ prev_year }}&month={{ prev_month }}">
@@ -38,10 +25,10 @@
     </div>
   </div>
 
-  <!-- Intro text -->
-  <p class="text-muted small mb-4 text-center">
-    Showing birthdays and anniversaries for <strong>{{ month_year_label }}</strong> across all families.
-  </p>
+    <p class="text-muted small mb-4">
+    Birthdays and anniversaries for <strong>{{ month_year_label }}</strong> across all families.
+    </p>
+
 
   {% if grouped_events %}
     <div class="d-flex flex-column gap-3">
@@ -68,21 +55,21 @@
                     {% if e.kind == "birthday" %}
                       <span class="me-2" aria-hidden="true">🎂</span>
                       <strong>{{ e.profile.user.first_name }} {{ e.profile.user.last_name }}</strong>
-                      {% if e.profile.family %}
-                        <span class="text-muted small">– {{ e.profile.family.name }}</span>
+                      <span class="text-muted small">– Birthday</span>
+                      {% if e.age %}
+                        <div class="text-muted small">
+                          Turning {{ e.age }}
+                        </div>
                       {% endif %}
-                      <div class="text-muted small">
-                        Birthday{% if e.age %} • Turning {{ e.age }}{% endif %}
-                      </div>
                     {% elif e.kind == "anniversary" %}
                       <span class="me-2" aria-hidden="true">💍</span>
                       <strong>{{ e.profile.user.first_name }} {{ e.profile.user.last_name }}</strong>
-                      {% if e.profile.family %}
-                        <span class="text-muted small">– {{ e.profile.family.name }}</span>
+                      <span class="text-muted small">– Anniversary</span>
+                      {% if e.years %}
+                        <div class="text-muted small">
+                          {{ e.years }} year{{ e.years|pluralize }} married
+                        </div>
                       {% endif %}
-                      <div class="text-muted small">
-                        Anniversary{% if e.years %} • {{ e.years }} year{{ e.years|pluralize }} married{% endif %}
-                      </div>
                     {% endif %}
                   </div>
 
@@ -101,7 +88,7 @@
       {% endfor %}
     </div>
   {% else %}
-    <div class="alert alert-info text-center">
+    <div class="alert alert-info">
       No birthdays or anniversaries found for {{ month_year_label }}.
     </div>
   {% endif %}
