@@ -15,8 +15,8 @@ ADMIN_NOTIFY_EMAIL = "tom@tom-stout.com"
 @receiver(post_save, sender=User)
 def create_profile_on_user_create(sender, instance: User, created: bool, **kwargs):
     """
-    Ensure every new User gets a Profile row with is_approved=False.
-    Also set safe defaults for avatar fields so we don't violate NOT NULL.
+    Ensure every new User gets a Profile row with is_approved=False
+    and a default avatar configuration.
     """
     if not created:
         return
@@ -25,8 +25,10 @@ def create_profile_on_user_create(sender, instance: User, created: bool, **kwarg
         user=instance,
         defaults={
             "is_approved": False,
+            # Explicitly set avatar_source to 'default' for new users
             "avatar_source": Profile.AVATAR_SOURCE_DEFAULT,
-            "avatar_choice": "",  # important: avoids NULL insert into NOT NULL column
+            # No library filename; get_avatar_url() will fall back to default_user.png
+            "avatar_library_filename": "",
         },
     )
 
@@ -45,5 +47,5 @@ def create_profile_on_user_create(sender, instance: User, created: bool, **kwarg
             fail_silently=True,
         )
     except Exception:
-        # Swallow email problems; we don't want them to break registration
+        # Don't let email issues break registration
         pass
