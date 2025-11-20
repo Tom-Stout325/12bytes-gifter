@@ -116,7 +116,7 @@ class WishlistItem(models.Model):
         - Parents cannot claim an item that is already claimed by someone else
           (single claimer rule).
         """
-        if not viewer_profile.is_parent():
+        if not viewer_profile.is_parent:
             return False
         # prevent claiming if already claimed by someone else
         if self.is_claimed and self.claimed_by and self.claimed_by != viewer_profile:
@@ -141,7 +141,7 @@ class WishlistItem(models.Model):
         Allow the claimer (or theoretically a superuser UI later) to unclaim.
         We'll keep this for future admin or parent flows.
         """
-        if not viewer_profile.is_parent():
+        if not viewer_profile.is_parent:
             raise PermissionError("Only parents can unclaim.")
         # Only the claimer or a parent from same family as the wishlist owner can unclaim.
         if (
@@ -158,7 +158,7 @@ class WishlistItem(models.Model):
         Mark item as purchased.
         Only Parent accounts can do this.
         """
-        if not viewer_profile.is_parent():
+        if not viewer_profile.is_parent:
             raise PermissionError("Only parents can mark purchased.")
         self.is_purchased = True
         self.purchased_by = viewer_profile
@@ -169,7 +169,7 @@ class WishlistItem(models.Model):
         """
         Undo purchase state (adminy / parenty power).
         """
-        if not viewer_profile.is_parent():
+        if not viewer_profile.is_parent:
             raise PermissionError("Only parents can clear purchase state.")
         self.is_purchased = False
         self.purchased_by = None
