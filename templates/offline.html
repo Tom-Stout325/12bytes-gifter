@@ -1,0 +1,66 @@
+{% extends "index.html" %}
+{% load static %}
+
+{% block title %}Offline | Gifter{% endblock %}
+
+{% block content %}
+<style>
+  .offline-wrapper {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+    text-align: center;
+  }
+
+  .offline-img {
+    width: 70%;
+    max-width: 260px;
+    margin-bottom: 1.5rem;
+  }
+
+  .offline-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #3b8f88;
+    margin-bottom: 0.5rem;
+  }
+
+  .offline-text {
+    font-size: 1rem;
+    color: #666;
+    margin-bottom: 2rem;
+  }
+
+  .offline-btn {
+    background-color: #3b8f88;
+    border: none;
+    padding: 0.75rem 1.3rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    color: white;
+  }
+</style>
+
+<div class="container mt-5 mb-5">
+  <div class="offline-wrapper">
+
+    <!-- Offline Image -->
+    <img src="{% static 'images/offline.png' %}" alt="Offline" class="offline-img">
+
+    <!-- Text -->
+    <h2 class="offline-title">You're Offline</h2>
+    <p class="offline-text">
+      Gifter can’t connect right now.  
+      Check your internet connection and try again.
+    </p>
+
+    <!-- Retry Button -->
+    <button class="offline-btn" onclick="window.location.reload()">
+      Retry
+    </button>
+
+  </div>
+</div>
+
+{% endblock %}

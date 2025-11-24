@@ -4,7 +4,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import path, include
 
-from accounts.views import home
+from accounts.views import home, service_worker, offline
+
 
 
 urlpatterns = [
@@ -12,6 +13,8 @@ urlpatterns = [
     path("accounts/", include(("accounts.urls", "accounts"), namespace="accounts")),
     path("", home, name="root"),
     path("", include(("gifter.urls", "gifter"), namespace="gifter")),
+    path("offline/", offline, name="offline"),
+    path("service-worker.js", service_worker, name="service-worker"),
 ]
 
 if settings.DEBUG:

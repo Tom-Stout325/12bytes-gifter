@@ -31,11 +31,9 @@
     <link rel="icon" href="{% static 'images/favicon.ico' %}" sizes="32x32" type="image/x-icon"/>
     <link rel="apple-touch-icon" href="{% static 'images/favicon.ico' %}"/>
 
-    {% comment %} 
-      {# CSRF token helper for custom JS fetch() calls.
-       Django does not automatically use this.
-       Keep it if you plan to manually attach it to AJAX later. #} 
-    {% endcomment %}
+    <link rel="manifest" href="{% static 'manifest.json' %}"> 
+    <meta name="theme-color" content="#3b8f88">
+
     <meta name="csrf-token" content="{{ csrf_token }}" />
 
     <!-- Fonts -->
@@ -75,77 +73,90 @@
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-      crossorigin="anonymous"
-    ></script>
+      crossorigin="anonymous">
+    </script>
 
     <!-- Page-Specific Scripts -->
     {% block extra_js %}{% endblock %}
     {% block footer_js %}{% endblock %}
+
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const body = document.body;
+        const themeToggle = document.getElementById("theme-toggle");
+        const themeIcon = document.getElementById("theme-icon");
+
+        if (!themeToggle || !themeIcon) {
+          // Navbar toggle not present (e.g. logged-out state) -> do nothing
+          return;
+        }
+
+        function applyTheme(isDark) {
+          if (isDark) {
+            body.classList.add("dark-mode");
+
+            // icon -> sun
+            if (themeIcon.classList.contains("fa-moon")) {
+              themeIcon.classList.replace("fa-moon", "fa-sun");
+            } else {
+              themeIcon.classList.add("fa-sun");
+              themeIcon.classList.remove("fa-moon");
+            }
+
+            // button outline = light
+            themeToggle.classList.remove("btn-outline-dark");
+            themeToggle.classList.add("btn-outline-light");
+          } else {
+            body.classList.remove("dark-mode");
+
+            // icon -> moon
+            if (themeIcon.classList.contains("fa-sun")) {
+              themeIcon.classList.replace("fa-sun", "fa-moon");
+            } else {
+              themeIcon.classList.add("fa-moon");
+              themeIcon.classList.remove("fa-sun");
+            }
+
+            // button outline = dark
+            themeToggle.classList.remove("btn-outline-light");
+            themeToggle.classList.add("btn-outline-dark");
+          }
+        }
+
+        // load starting theme from localStorage or system preference
+        const savedTheme = localStorage.getItem("theme");
+        const prefersDark =
+          window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+        const startDark = savedTheme
+          ? savedTheme === "dark"
+          : prefersDark;
+
+        applyTheme(startDark);
+
+        // handle click toggle
+        themeToggle.addEventListener("click", () => {
+          const willBeDark = !body.classList.contains("dark-mode");
+          applyTheme(willBeDark);
+          localStorage.setItem("theme", willBeDark ? "dark" : "light");
+        });
+      });
+
+    </script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register("{% url 'service-worker' %}")
+            .then(function (registration) {
+              console.log("ServiceWorker registered with scope:", registration.scope);
+            })
+            .catch(function (error) {
+              console.error("ServiceWorker registration failed:", error);
+            });
+        });
+      }
+    </script>
   </body>
 </html>
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const body = document.body;
-    const themeToggle = document.getElementById("theme-toggle");
-    const themeIcon = document.getElementById("theme-icon");
-
-    if (!themeToggle || !themeIcon) {
-      // Navbar toggle not present (e.g. logged-out state) -> do nothing
-      return;
-    }
-
-    function applyTheme(isDark) {
-      if (isDark) {
-        body.classList.add("dark-mode");
-
-        // icon -> sun
-        if (themeIcon.classList.contains("fa-moon")) {
-          themeIcon.classList.replace("fa-moon", "fa-sun");
-        } else {
-          themeIcon.classList.add("fa-sun");
-          themeIcon.classList.remove("fa-moon");
-        }
-
-        // button outline = light
-        themeToggle.classList.remove("btn-outline-dark");
-        themeToggle.classList.add("btn-outline-light");
-      } else {
-        body.classList.remove("dark-mode");
-
-        // icon -> moon
-        if (themeIcon.classList.contains("fa-sun")) {
-          themeIcon.classList.replace("fa-sun", "fa-moon");
-        } else {
-          themeIcon.classList.add("fa-moon");
-          themeIcon.classList.remove("fa-sun");
-        }
-
-        // button outline = dark
-        themeToggle.classList.remove("btn-outline-light");
-        themeToggle.classList.add("btn-outline-dark");
-      }
-    }
-
-    // load starting theme from localStorage or system preference
-    const savedTheme = localStorage.getItem("theme");
-    const prefersDark =
-      window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-    const startDark = savedTheme
-      ? savedTheme === "dark"
-      : prefersDark;
-
-    applyTheme(startDark);
-
-    // handle click toggle
-    themeToggle.addEventListener("click", () => {
-      const willBeDark = !body.classList.contains("dark-mode");
-      applyTheme(willBeDark);
-      localStorage.setItem("theme", willBeDark ? "dark" : "light");
-    });
-  });
-</script>
-
-

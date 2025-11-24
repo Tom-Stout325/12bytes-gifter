@@ -12,6 +12,8 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.utils import timezone
 from datetime import date
 import calendar
+from django.http import HttpResponse, Http404
+from django.contrib.staticfiles import finders
 
 from .forms import (
     RegisterForm,
@@ -338,15 +340,6 @@ def family_manage_update(request, pk: int):
     return render(request, "accounts/family_manage_form.html", {"form": form, "family": fam})
 
 
-from datetime import date
-import calendar
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from django.utils import timezone
-
-from .models import Profile
-
 
 def _shift_month(year: int, month: int, delta: int) -> tuple[int, int]:
     """
@@ -471,3 +464,27 @@ def occasions_month(request):
     }
 
     return render(request, "accounts/occasions_month.html", context)
+
+
+
+
+
+def service_worker(request):
+    """
+    Serve the service worker from the root URL so it controls the whole site.
+    """
+    sw_path = finders.find("js/service-worker.js")  # look inside static/js/
+
+    if not sw_path:
+        raise Http404("Service worker file not found.")
+
+    with open(sw_path, "r", encoding="utf-8") as f:
+        js = f.read()
+
+    return HttpResponse(js, content_type="application/javascript")
+
+
+
+
+def offline(request):
+    return render(request, "offline.html")
