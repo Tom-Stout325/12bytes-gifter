@@ -7,9 +7,6 @@
 
 {% block content %}
 
-
-
-
 <div class="container mt-4" style="max-width: 700px">
 
   <!-- Profile Card -->
@@ -42,7 +39,7 @@
             {% endif %}
           {% endif %}
         </h2>
-        {# Owner-only actions: edit/account/password #}
+
         {% if request.user == target_user %}
           <div class="mt-2 d-flex flex-wrap gap-2">
             <a class="btn btn-sm btn-outline-secondary" href="{% url 'accounts:profile_edit' %}">
@@ -56,6 +53,7 @@
             </a>
           </div>
         {% endif %}
+
         <div class="text-muted small">
           {% if target_profile.birthday %}
             <div><strong>Birthday:</strong> {{ target_profile.birthday }}</div>
@@ -139,13 +137,14 @@
     </div>
 
     <div class="card-body small">
+
       {% if wishlist_items %}
         <ul class="list-group list-group-flush">
+
           {% for item in wishlist_items %}
             <li class="list-group-item">
               <div class="d-flex flex-column flex-sm-row align-items-start gap-3 w-100">
 
-                {# Item image preview (optional per-item image) #}
                 {% if item.image %}
                   <div
                     style="
@@ -163,44 +162,49 @@
                 {% endif %}
 
                 <div class="flex-grow-1 w-100">
-                  <!-- Title / price row -->
+
+                  <!-- Title & price -->
                   <div class="d-flex justify-content-between flex-wrap">
                     <div class="fw-semibold text-secondary">{{ item.title }}</div>
-
                     {% if item.price_estimate %}
-                      <div class="text-muted">
-                        ${{ item.price_estimate }}
-                      </div>
+                      <div class="text-muted">${{ item.price_estimate }}</div>
                     {% endif %}
                   </div>
 
                   {% if item.description %}
-                    <div class="text-muted">
-                      {{ item.description }}
-                    </div>
+                    <div class="text-muted">{{ item.description }}</div>
                   {% endif %}
 
-                  {% if item.link %}
-                    <div class="mt-1">
+                  <!-- View / Buy + NEW DETAIL VIEW LINK -->
+                  <div class="mt-2 d-flex flex-wrap gap-2">
+
+                    {% if item.link %}
                       <a
                         href="{{ item.link }}"
                         target="_blank"
                         rel="noopener"
-                        class="text-primary">
+                        class="btn btn-sm btn-outline-primary">
                         View / Buy
                         <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i>
                       </a>
-                    </div>
-                  {% endif %}
+                    {% endif %}
 
-                  {# Claim / purchase badges (visibility controlled by can_view_purchase_info) #}
+                    <!-- NEW: View detail page -->
+                    <a
+                      href="{% url 'gifter:wishlist_item_detail' pk=item.pk %}"
+                      class="btn btn-sm btn-emphasis">
+                      <i class="fa-solid fa-eye me-1"></i> View
+                    </a>
+                  </div>
+
                   {% if can_view_purchase_info %}
                     <div class="mt-2 d-flex flex-wrap gap-2">
+
                       {% if item.is_claimed and item.claimed_by %}
                         <span class="badge bg-emphasis text-dark fw-semibold">
                           Claimed
                           {% if item.claimed_by.user %}
-                            by {{ item.claimed_by.user.first_name }} {{ item.claimed_by.user.last_name }}
+                            by {{ item.claimed_by.user.first_name }}
                           {% endif %}
                         </span>
                       {% endif %}
@@ -209,36 +213,27 @@
                         <span class="badge bg-success text-dark fw-semibold">
                           Purchased
                           {% if item.purchased_by.user %}
-                            by {{ item.purchased_by.user.first_name }} {{ item.purchased_by.user.last_name }}
+                            by {{ item.purchased_by.user.first_name }}
                           {% endif %}
                         </span>
                       {% endif %}
                     </div>
-                  {% endif %}
 
-                  {# Claim / purchase action buttons (only shown if viewer is allowed to see purchase info) #}
-                  {% if can_view_purchase_info %}
+                    <!-- Claim / purchase actions -->
                     <div class="mt-3 d-flex flex-wrap gap-2">
 
-                      {# Claim / Unclaim logic #}
-                      {% if item.is_claimed and item.claimed_by and item.claimed_by.user == request.user %}
-                        <form
-                          action="{% url 'gifter:unclaim_wishlist_item' pk=item.pk %}"
-                          method="post"
-                          class="d-inline">
+                      {% if item.is_claimed and item.claimed_by.user == request.user %}
+                        <form action="{% url 'gifter:unclaim_wishlist_item' pk=item.pk %}" method="post">
                           {% csrf_token %}
-                          <button type="submit" class="btn btn-sm btn-secondary">
+                          <button class="btn btn-sm btn-secondary">
                             <i class="fa-solid fa-rotate-left me-1"></i> Unclaim
                           </button>
                         </form>
 
                       {% elif not item.is_claimed %}
-                        <form
-                          action="{% url 'gifter:claim_wishlist_item' pk=item.pk %}"
-                          method="post"
-                          class="d-inline">
+                        <form action="{% url 'gifter:claim_wishlist_item' pk=item.pk %}" method="post">
                           {% csrf_token %}
-                          <button type="submit" class="btn btn-sm btn-secondary">
+                          <button class="btn btn-sm btn-secondary">
                             <i class="fa-solid fa-hand-holding-heart me-1"></i> Claim
                           </button>
                         </form>
@@ -249,24 +244,18 @@
                         </button>
                       {% endif %}
 
-                      {# Purchase / Unpurchase logic #}
                       {% if item.is_purchased %}
-                        <form
-                          action="{% url 'gifter:clear_purchased_wishlist_item' pk=item.pk %}"
-                          method="post"
-                          class="d-inline">
+                        <form action="{% url 'gifter:clear_purchased_wishlist_item' pk=item.pk %}" method="post">
                           {% csrf_token %}
-                          <button type="submit" class="btn btn-sm btn-danger">
+                          <button class="btn btn-sm btn-danger">
                             <i class="fa-solid fa-xmark me-1"></i> Undo Purchased
                           </button>
                         </form>
+
                       {% else %}
-                        <form
-                          action="{% url 'gifter:mark_purchased_wishlist_item' pk=item.pk %}"
-                          method="post"
-                          class="d-inline">
+                        <form action="{% url 'gifter:mark_purchased_wishlist_item' pk=item.pk %}" method="post">
                           {% csrf_token %}
-                          <button type="submit" class="btn btn-sm btn-primary">
+                          <button class="btn btn-sm btn-primary">
                             <i class="fa-solid fa-check me-1"></i> Mark Purchased
                           </button>
                         </form>
@@ -274,7 +263,6 @@
                     </div>
                   {% endif %}
 
-                  {# Owner / allowed parent edit/delete for wishlist item #}
                   {% if can_edit_wishlist %}
                     <div class="mt-3 d-flex flex-wrap gap-2">
                       <a
@@ -286,11 +274,9 @@
                       <form
                         action="{% url 'gifter:delete_wishlist_item' pk=item.pk %}"
                         method="post"
-                        class="d-inline">
+                        onsubmit="return confirm('Are you sure you want to delete this?');">
                         {% csrf_token %}
-                        <button type="submit"
-                                class="btn btn-sm btn-danger"
-                                onclick="return confirm('Are you sure you want to delete this item?');">
+                        <button class="btn btn-sm btn-danger">
                           <i class="fa-solid fa-trash-can me-1"></i> Delete
                         </button>
                       </form>
@@ -301,6 +287,7 @@
               </div>
             </li>
           {% endfor %}
+
         </ul>
       {% else %}
         <p class="text-muted mb-0">No items yet.</p>
@@ -309,4 +296,5 @@
   </div>
 
 </div>
+
 {% endblock %}

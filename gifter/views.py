@@ -262,17 +262,6 @@ def view_wishlist(request, username):
     target_user = get_object_or_404(User, username=username)
     target_profile = get_object_or_404(Profile, user=target_user)
 
-
-
-    # if not target_profile.is_approved:
-    #     messages.error(request, "test")
-    #     if target_user == request.user:
-    #         return redirect("accounts:profile_edit")
-    #     return redirect("gifter:all_families")
-
-
-
-    # Rendering happens in accounts/profile_detail.html, so forward to that
     return redirect("accounts:profile_detail", username=username)
 
 
@@ -312,12 +301,7 @@ def _next_occurrence(d: date) -> date | None:
 
 
 
-# gifter/views.py
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, redirect, render
-from accounts.models import Family, Profile
-from .models import WishlistItem
-from datetime import timedelta
+
 
 @login_required
 def family_detail(request, slug):
@@ -543,3 +527,37 @@ def all_families(request):
             "viewer": viewer,
         },
     )
+    
+    
+
+@login_required
+def wishlist_item_detail(request, pk):
+    """
+    Show a detailed view of a single wishlist item.
+
+    Anyone who can view the profile can view this page.
+    Claim/purchase visibility still respects can_view_purchase_info.
+    """
+    viewer_profile = request.user.profile
+    if not viewer_profile.is_approved:
+        return redirect("accounts:pending_approval")
+
+    item = (
+        WishlistItem.objects
+        .select_related("profile__user", "claimed_by__user", "purchased_by__user")
+        .get(pk=pk)
+    )
+
+    target_profile = item.profile
+    target_user = target_profile.user
+
+    context = {
+        "item": item,
+        "target_profile": target_profile,
+        "target_user": target_user,
+        "viewer_profile": viewer_profile,
+        "can_view_purchase_info": viewer_profile.can_view_purchase_info_for(target_profile),
+        "can_view_private_notes": viewer_profile.can_view_private_notes_for(target_profile),
+        "can_edit_wishlist": viewer_profile.can_edit_profile(target_profile),
+    }
+    return render(request, "gifter/wishlist_item_detail.html", context)

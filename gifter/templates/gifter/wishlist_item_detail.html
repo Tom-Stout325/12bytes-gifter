@@ -1,0 +1,189 @@
+{% extends "index.html" %}
+{% load static %}
+
+{% block title %}
+  {{ item.title }} | {{ target_user.first_name }}'s Wishlist | Gifter
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5" style="max-width: 700px;">
+
+  <!-- Back link -->
+  <div class="mb-3">
+    <a href="{% url 'accounts:profile_detail' username=target_user.username %}"
+       class="text-decoration-none">
+      <i class="fa-solid fa-arrow-left me-1"></i>
+      Back to {{ target_user.first_name }}'s profile
+    </a>
+  </div>
+
+  <!-- Card -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+
+      <!-- Header -->
+      <div class="d-flex flex-column flex-sm-row align-items-start gap-3 mb-3">
+
+        {% if item.image %}
+          <div
+            style="
+              width: 110px;
+              height: 110px;
+              border-radius: 0.75rem;
+              overflow: hidden;
+              background: #f5f5f5;
+              flex-shrink: 0;">
+            <img src="{{ item.image.url }}"
+                 alt="{{ item.title }}"
+                 style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+        {% endif %}
+
+        <div class="flex-grow-1">
+          <h1 class="h4 mb-1">{{ item.title }}</h1>
+
+          {% if item.price_estimate %}
+            <div class="mb-1 text-muted">
+              Approx. price:
+              <strong>${{ item.price_estimate }}</strong>
+            </div>
+          {% endif %}
+
+          <div class="small text-muted">
+            On {{ target_user.first_name }}'s wishlist
+          </div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      {% if item.description %}
+        <div class="mb-3">
+          <h6 class="text-uppercase text-muted small mb-1">Details</h6>
+          <p class="mb-0">{{ item.description|linebreaksbr }}</p>
+        </div>
+      {% endif %}
+
+      <!-- External link -->
+      {% if item.link %}
+        <div class="mb-3">
+          <h6 class="text-uppercase text-muted small mb-1">Link</h6>
+          <a href="{{ item.link }}"
+             target="_blank"
+             rel="noopener"
+             class="btn btn-sm btn-outline-primary">
+            View / Buy Online
+            <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i>
+          </a>
+        </div>
+      {% endif %}
+
+      <!-- Claim / Purchase status -->
+      {% if can_view_purchase_info %}
+        <div class="mb-3">
+          <h6 class="text-uppercase text-muted small mb-1">Status</h6>
+          <div class="d-flex flex-wrap gap-2">
+
+            {% if item.is_claimed and item.claimed_by %}
+              <span class="badge bg-emphasis text-dark fw-semibold">
+                Claimed
+                {% if item.claimed_by.user %}
+                  by {{ item.claimed_by.user.first_name }} {{ item.claimed_by.user.last_name }}
+                {% endif %}
+              </span>
+            {% endif %}
+
+            {% if item.is_purchased and item.purchased_by %}
+              <span class="badge bg-success text-dark fw-semibold">
+                Purchased
+                {% if item.purchased_by.user %}
+                  by {{ item.purchased_by.user.first_name }} {{ item.purchased_by.user.last_name }}
+                {% endif %}
+              </span>
+            {% endif %}
+
+            {% if not item.is_claimed and not item.is_purchased %}
+              <span class="badge bg-secondary text-light">
+                Not yet claimed
+              </span>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Action buttons (only for viewers allowed to see purchase info) -->
+      {% if can_view_purchase_info %}
+        <div class="mb-3 d-flex flex-wrap gap-2">
+
+          {# Claim / Unclaim buttons #}
+          {% if item.is_claimed and item.claimed_by and item.claimed_by.user == request.user %}
+            <form
+              action="{% url 'gifter:unclaim_wishlist_item' pk=item.pk %}"
+              method="post"
+              class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-secondary">
+                <i class="fa-solid fa-rotate-left me-1"></i> Unclaim
+              </button>
+            </form>
+          {% elif not item.is_claimed %}
+            <form
+              action="{% url 'gifter:claim_wishlist_item' pk=item.pk %}"
+              method="post"
+              class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-secondary">
+                <i class="fa-solid fa-hand-holding-heart me-1"></i> Claim
+              </button>
+            </form>
+          {% else %}
+            <button class="btn btn-sm btn-secondary" disabled>
+              <i class="fa-solid fa-hand-holding-heart me-1"></i> Claimed
+            </button>
+          {% endif %}
+
+          {# Purchase / Unpurchase buttons #}
+          {% if item.is_purchased %}
+            <form
+              action="{% url 'gifter:clear_purchased_wishlist_item' pk=item.pk %}"
+              method="post"
+              class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger">
+                <i class="fa-solid fa-xmark me-1"></i> Undo Purchased
+              </button>
+            </form>
+          {% else %}
+            <form
+              action="{% url 'gifter:mark_purchased_wishlist_item' pk=item.pk %}"
+              method="post"
+              class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-primary">
+                <i class="fa-solid fa-check me-1"></i> Mark Purchased
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <!-- Edit / delete for owners / parents -->
+      {% if can_edit_wishlist %}
+        <div class="border-top pt-3 mt-2 d-flex flex-wrap gap-2">
+          <a
+            href="{% url 'gifter:edit_wishlist_item' pk=item.pk %}"
+            class="btn btn-sm btn-secondary">
+            <i class="fa-solid fa-pen-to-square me-1"></i> Edit Item
+          </a>
+          <a
+            href="{% url 'gifter:delete_wishlist_item' pk=item.pk %}"
+            class="btn btn-sm btn-danger">
+            <i class="fa-solid fa-trash-can me-1"></i> Delete Item
+          </a>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

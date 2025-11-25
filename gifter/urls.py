@@ -14,6 +14,8 @@ urlpatterns = [
     path("wishlist/<str:username>/", views.view_wishlist, name="view_wishlist"),
     path("wishlist/unclaimed/", views.unclaimed_wishlist, name="unclaimed_wishlist"),
 
+    path("wishlist/item/<int:pk>/", views.wishlist_item_detail, name="wishlist_item_detail"),
+
     # Wishlist CRUD
     path("wishlist/<str:username>/add/", views.add_wishlist_item, name="add_wishlist_item"),
     path("wishlist/item/<int:pk>/edit/", views.edit_wishlist_item, name="edit_wishlist_item"),
