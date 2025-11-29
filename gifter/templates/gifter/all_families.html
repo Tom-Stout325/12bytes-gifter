@@ -33,7 +33,7 @@
   <!-- Coming Soon (global next 5) -->
   <div class="card shadow-sm mb-4">
     <div class="card-body">
-      <div class="text-uppercase text-muted small fw-semibold mb-2">Coming Soon!</div>
+      <div class="text-uppercase text-center text-primary text-muted small fw-semibold mb-2">Coming Soon!</div>
 
       {% if global_next5 %}
         <ul class="list-unstyled mb-0">
@@ -118,15 +118,6 @@
               {% else %}
                 <div class="text-muted small">No upcoming events in the next two months.</div>
               {% endif %}
-
-              <!-- Members count -->
-              <div class="mt-3">
-                {% with total=block.parents|length|add:block.kids|length %}
-                  <span class="badge bg-light text-muted border">
-                    {{ total }} member{{ total|pluralize }}
-                  </span>
-                {% endwith %}
-              </div>
             </div>
           </div>
         </a>
