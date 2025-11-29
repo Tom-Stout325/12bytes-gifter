@@ -52,7 +52,7 @@ class Family(models.Model):
     class Meta:
         verbose_name = "Family"
         verbose_name_plural = "Families"
-        ordering = ["display_name"]
+        ordering = ["family_name"] 
         constraints = [
             # Disallow the same user in both parent slots (unless one/both are NULL)
             models.CheckConstraint(
@@ -164,7 +164,7 @@ class Profile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["user__first_name", "user__last_name", "user__username"]
+        ordering = ["user__last_name", "user__first_name"]
 
     def __str__(self) -> str:
         return self.user.get_full_name() or self.user.username
