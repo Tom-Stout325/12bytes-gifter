@@ -3,15 +3,19 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Q, F
 from django.template.defaultfilters import slugify
 from django.templatetags.static import static
+from typing import TYPE_CHECKING
+from django.contrib.auth import get_user_model
+
+if TYPE_CHECKING:
+    from django.contrib.auth.models import AbstractUser
+
 
 User = get_user_model()
-
 
 # ---------------------------------------------------------------------
 # Avatar upload path
@@ -52,7 +56,7 @@ class Family(models.Model):
     class Meta:
         verbose_name = "Family"
         verbose_name_plural = "Families"
-        ordering = ["family_name"] 
+        ordering = ["display_name"] 
         constraints = [
             # Disallow the same user in both parent slots (unless one/both are NULL)
             models.CheckConstraint(
@@ -99,7 +103,7 @@ class Family(models.Model):
         super().save(*args, **kwargs)
 
     @transaction.atomic
-    def assign_parent_slot(self, user: User) -> "Family":
+    def assign_parent_slot(self, user: "AbstractUser") -> "Family":
         """
         Safely assign a registering Parent user to parent1/parent2 if a slot is open.
         Uses a row lock to avoid race conditions.
@@ -111,7 +115,6 @@ class Family(models.Model):
             fam.parent2 = user
         fam.save(update_fields=["parent1", "parent2"])
         return fam
-
 
 # ---------------------------------------------------------------------
 # Profile
@@ -164,7 +167,7 @@ class Profile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["user__last_name", "user__first_name"]
+        ordering = ["user__username"]
 
     def __str__(self) -> str:
         return self.user.get_full_name() or self.user.username
