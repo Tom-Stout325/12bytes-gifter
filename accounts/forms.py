@@ -2,36 +2,122 @@ from __future__ import annotations
 
 from django import forms
 from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import UserCreationForm
+User = get_user_model()
+
 from .models import Profile, Family
 
 User = get_user_model()
+
+
 
 
 # ---------------------------
 # Registration
 # ---------------------------
 
-class RegisterForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput(attrs={"class": "form-control"}))
-    confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={"class": "form-control"}))
+class ParentRegistrationForm(UserCreationForm):
+    """
+    Registration form for new Parent users.
 
-    class Meta:
+    - Always creates a Parent profile.
+    - Parent can either create a new Family OR join an existing one.
+    """
+
+    # Basic user fields
+    first_name = forms.CharField(max_length=150, required=True)
+    last_name = forms.CharField(max_length=150, required=True)
+    email = forms.EmailField(required=True)
+
+    # Family options (no more family_mode)
+    new_family_name = forms.CharField(
+        max_length=200,
+        required=False,
+        help_text=(
+            "Create your family name. For example: Tom & Leslie, "
+            "Grandma Susan, or The Rivera Household."
+        ),
+        label="New family name",
+    )
+
+    existing_family = forms.ModelChoiceField(
+        queryset=Family.objects.all().order_by("display_name"),
+        required=False,
+        label="Select existing family to join",
+        help_text="Choose your spouse/partner's family if it already exists.",
+    )
+
+    class Meta(UserCreationForm.Meta):
         model = User
-        fields = ["first_name", "last_name", "username", "email"]
-        widgets = {
-            "first_name": forms.TextInput(attrs={"class": "form-control"}),
-            "last_name": forms.TextInput(attrs={"class": "form-control"}),
-            "username": forms.TextInput(attrs={"class": "form-control"}),
-            "email": forms.EmailInput(attrs={"class": "form-control"}),
-        }
+        fields = (
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "password1",
+            "password2",
+        )
 
     def clean(self):
-        cleaned = super().clean()
-        pw = cleaned.get("password")
-        cpw = cleaned.get("confirm_password")
-        if pw and cpw and pw != cpw:
-            raise forms.ValidationError("Passwords do not match.")
-        return cleaned
+        """
+        Enforce that the user either:
+        - Enters a new_family_name, OR
+        - Selects an existing_family,
+        but not both and not neither.
+        """
+        cleaned_data = super().clean()
+        new_family_name = cleaned_data.get("new_family_name")
+        existing_family = cleaned_data.get("existing_family")
+
+        if not new_family_name and not existing_family:
+            msg = "Please enter a new family name or select an existing family."
+            self.add_error("new_family_name", msg)
+            self.add_error("existing_family", msg)
+
+        if new_family_name and existing_family:
+            msg = "Choose either a new family name or an existing family, not both."
+            self.add_error("new_family_name", msg)
+            self.add_error("existing_family", msg)
+
+        return cleaned_data
+
+
+
+
+class ChildCreateForm(UserCreationForm):
+    """
+    Form for parents to create a child account.
+
+    - Email is optional (username will be used for login).
+    - Profile role/family will be set in the view.
+    """
+
+    first_name = forms.CharField(
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+        label="First name",
+    )
+    last_name = forms.CharField(
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+        label="Last name",
+    )
+    email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={"class": "form-control"}),
+        label="Email (optional)",
+        help_text="Optional. Teens can use their email, younger kids can leave this blank.",
+    )
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ("username", "first_name", "last_name", "email", "password1", "password2")
+        widgets = {
+            "username": forms.TextInput(attrs={"class": "form-control"}),
+        }
+
 
 
 # ---------------------------

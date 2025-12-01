@@ -3,6 +3,10 @@ from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
 from accounts.models import Profile
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 
 
 class WishlistItem(models.Model):
@@ -176,3 +180,56 @@ class WishlistItem(models.Model):
         self.purchased_at = None
 
 
+
+
+
+# ---------------------------------------------------------------------
+#                                 Message Board
+# ---------------------------------------------------------------------
+
+class BoardPost(models.Model):
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="board_posts",
+    )
+    title = models.CharField(max_length=200)
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]  # newest first
+
+    def __str__(self) -> str:
+        return self.title[:80]
+
+    @property
+    def is_recent(self) -> bool:
+        """
+        Helper: True if this post is within the last 30 days.
+        """
+        cutoff = timezone.now() - timezone.timedelta(days=30)
+        return self.created_at >= cutoff
+
+
+class BoardComment(models.Model):
+    post = models.ForeignKey(
+        BoardPost,
+        on_delete=models.CASCADE,
+        related_name="comments",
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="board_comments",
+    )
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["created_at"]  # oldest → newest
+
+    def __str__(self) -> str:
+        return f"Comment by {self.author} on {self.post}"

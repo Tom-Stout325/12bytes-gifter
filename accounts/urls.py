@@ -13,6 +13,10 @@ urlpatterns = [
     path("login/", views.RootLoginView.as_view(template_name="registration/login.html", redirect_authenticated_user=True,),name="login",),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("register/", views.register, name="register"),
+
+        # Children
+    path("children/add/", views.add_child, name="add_child"),
+
     path("post-login/", views.post_login_redirect, name="post_login_redirect"),
 
     # Profile

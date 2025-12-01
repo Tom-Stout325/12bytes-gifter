@@ -1,32 +1,36 @@
 from __future__ import annotations
 
+from datetime import date
+import calendar
+import os
+
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.views import LoginView
-from django.db import transaction
-from django.shortcuts import get_object_or_404, redirect, render
-from django.conf import settings
-import os
-from django.contrib.auth.models import AbstractBaseUser
-from django.utils import timezone
-from datetime import date
-import calendar
-from django.http import HttpResponse, Http404
 from django.contrib.staticfiles import finders
+from django.db import transaction
+from django.http import HttpResponse, Http404
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
 from .forms import (
-    RegisterForm,
+    ParentRegistrationForm,
+    ChildCreateForm,
     ProfileSetupForm,
     ProfileEditForm,
     FamilySetupForm,
     AccountSettingsForm,
 )
 from .models import Profile, Family
-from gifter.models import WishlistItem  # used in profile_detail
+from gifter.models import WishlistItem
 
-from django.contrib.auth import get_user_model
 User = get_user_model()
+
+
+
+
 
 
 # --- Help page (public) ---
@@ -35,8 +39,10 @@ def help(request):
     return render(request, "accounts/help.html")
 
 
-def _is_admin(user: AbstractBaseUser) -> bool:
+def _is_admin(user) -> bool:
     return bool(user.is_superuser or user.is_staff)
+
+
 
 # ---------------------------
 # Helpers
@@ -51,37 +57,50 @@ def _profile_complete(profile: Profile) -> bool:
         return bool(profile.avatar_upload)
     if profile.avatar_source == profile.AVATAR_SOURCE_LIBRARY:
         return bool(profile.avatar_library_filename)
-    return True  # default avatar counts
-
-
-# def _is_admin(user: User) -> bool:
-#     return bool(user.is_superuser or user.is_staff)
-
-
+    return True  
 
 
 def home(request):
     """
     Anonymous → full-screen home with Login/Register.
     Authenticated:
-      - not approved → profile detail w/ notice
-      - approved but incomplete → profile edit w/ warning
-      - approved + complete → gifter:all_families
+      - parent not approved      → pending_approval page
+      - approved but incomplete  → profile edit w/ warning
+      - approved + complete      → gifter:all_families
     """
     if not request.user.is_authenticated:
         return render(request, "accounts/home.html")
 
-    profile, _ = Profile.objects.get_or_create(user=request.user, defaults={"is_approved": False})
+    profile, _ = Profile.objects.get_or_create(
+        user=request.user,
+        defaults={"is_approved": False},
+    )
 
-    if not profile.is_approved:
-        messages.info(request, "Your profile is pending approval.")
-        return redirect("accounts:profile_detail", username=request.user.username)
+    # --- Approval gate for parents ---
+    if profile.is_parent and not profile.is_approved:
+        messages.info(
+            request,
+            "Your parent account is pending approval from an admin. "
+            "You’ll be able to manage your family once approved."
+        )
+        return redirect("accounts:pending_approval")
 
+    # --- Profile completeness gate (for everyone else) ---
     if not _profile_complete(profile):
         messages.warning(request, "Please complete your profile before continuing.")
         return redirect("accounts:profile_edit")
 
+    # --- Fully approved + complete: send into Gifter ---
     return redirect("gifter:all_families")
+
+
+
+
+
+def post_login_redirect(request):
+    """Compatibility route; just use home logic."""
+    return home(request)
+
 
 
 class RootLoginView(LoginView):
@@ -96,35 +115,71 @@ class RootLoginView(LoginView):
 # Registration
 # ---------------------------
 
+@transaction.atomic
 def register(request):
     """
-    Create a User account.
-    - Profile row is created by the User post_save signal with is_approved=False.
-    - Admin notification email is sent from that signal.
-    - If already authenticated, route via home.
+    Registration view for new Parent accounts.
+
+    Flow:
+    - User fills in basic info + chooses to create or join a Family.
+    - We create the User and Parent Profile (is_approved = False).
+    - We either create a new Family or link to an existing one.
+    - We assign the user into parent1 / parent2 slot if available.
+    - We then redirect to 'pending_approval' so the admin can approve.
     """
-    if request.user.is_authenticated:
-        return home(request)
 
     if request.method == "POST":
-        form = RegisterForm(request.POST)
+        form = ParentRegistrationForm(request.POST)
         if form.is_valid():
+            # ----- 1. Create the User -----
             user = form.save(commit=False)
-            user.set_password(form.cleaned_data["password"])
-            user.save()  # triggers profile creation + admin email via signals
-            messages.success(request, "Account created! Please complete your profile.")
-            return redirect("accounts:profile_setup")
+            user.first_name = form.cleaned_data["first_name"]
+            user.last_name = form.cleaned_data["last_name"]
+            user.email = form.cleaned_data["email"]
+            user.save()
+
+                        # ----- 2. Resolve family (create or join) -----
+            new_family_name = form.cleaned_data.get("new_family_name")
+            existing_family = form.cleaned_data.get("existing_family")
+
+            if new_family_name:
+                # Create a new family with the provided display name
+                family = Family.objects.create(display_name=new_family_name)
+            else:
+                # Join the chosen existing family
+                family = existing_family
+
+
+            # ----- 3. Create or update Profile as Parent -----
+            profile, created = Profile.objects.get_or_create(user=user)
+            profile.role = Profile.ROLE_PARENT
+            profile.family = family
+            profile.is_approved = False  # admin will flip this later
+            profile.save()
+
+            # ----- 4. Assign parent slot on the family -----
+            # Note: we already validated open slots in the form, so this should succeed.
+            family.assign_parent_slot(user)
+
+            # ----- 5. (Optional) Notify admin for approval -----
+            # You already have email logic somewhere; keep or move it here.
+            # For example:
+            #
+            # from django.core.mail import send_mail
+            # send_mail(
+            #     subject="New Gifter parent registration pending approval",
+            #     message=f"A new parent has registered: {user.get_full_name()} ({user.username})",
+            #     from_email=settings.DEFAULT_FROM_EMAIL,
+            #     recipient_list=[settings.ADMINS[0][1]]  # or another address
+            # )
+
+            # ----- 6. Redirect to "pending approval" page -----
+            # You already have a 'pending_approval' view/URL in accounts.
+            return redirect("accounts:pending_approval")
     else:
-        form = RegisterForm()
+        form = ParentRegistrationForm()
 
     return render(request, "accounts/register.html", {"form": form})
-
-
-@login_required
-def post_login_redirect(request):
-    """Compatibility route; just use home logic."""
-    return home(request)
-
 
 # ---------------------------
 # Profile Setup & Edit
@@ -189,45 +244,135 @@ def profile_setup(request):
     )
 
 
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
 
 @login_required
 def profile_edit(request):
     """
-    Full editor with user fields and avatar controls; password changes via PasswordChangeView.
+    Full editor with user fields and avatar controls.
+
+    - By default edits the logged-in user's profile.
+    - If ?child=<username> is present AND the viewer has permission,
+      edits that child's profile instead.
     """
-    profile = get_object_or_404(Profile, user=request.user)
+    viewer_profile = get_object_or_404(Profile, user=request.user)
+
+    # Optional child username from query string (used by "Edit Child's Profile" button)
+    child_username = request.GET.get("child")
+
+    # Default target is the viewer themself
+    target_user = request.user
+    target_profile = viewer_profile
+
+    if child_username:
+        # Look up the child user/profile
+        target_user = get_object_or_404(User, username=child_username)
+        target_profile = get_object_or_404(Profile, user=target_user)
+
+        # Permission check: can this viewer edit this profile?
+        if not viewer_profile.can_edit_profile(target_profile):
+            # You can use PermissionDenied or a friendlier redirect + message if you prefer
+            raise Http404("You do not have permission to edit this profile.")
 
     if request.method == "POST":
         form = ProfileEditForm(
-            request.POST, request.FILES,
-            instance=profile, user=request.user, viewer_profile=profile
+            request.POST,
+            request.FILES,
+            instance=target_profile,
+            user=target_user,           # <-- who we're editing (child or self)
+            viewer_profile=viewer_profile,  # <-- who is doing the editing
         )
         if form.is_valid():
             prof = form.save()
+
+            # Parent-slot assignment only applies to parent profiles
             if prof.role == Profile.ROLE_PARENT and prof.family_id:
                 with transaction.atomic():
-                    Family.objects.select_for_update().get(pk=prof.family_id).assign_parent_slot(request.user)
-            messages.success(request, "Profile updated.")
-            return redirect("accounts:profile_detail", username=request.user.username)
-    else:
-        form = ProfileEditForm(instance=profile, user=request.user, viewer_profile=profile)
+                    Family.objects.select_for_update().get(
+                        pk=prof.family_id
+                    ).assign_parent_slot(target_user)
 
-    avatar_dir = os.path.join(settings.BASE_DIR, 'static', 'images', 'avatars', 'users')
-    available_avatars = sorted([
-        f for f in os.listdir(avatar_dir)
-        if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif'))
-    ])
+            messages.success(request, "Profile updated.")
+            return redirect("accounts:profile_detail", username=target_user.username)
+    else:
+        form = ProfileEditForm(
+            instance=target_profile,
+            user=target_user,
+            viewer_profile=viewer_profile,
+        )
+
+    avatar_dir = os.path.join(settings.BASE_DIR, "static", "images", "avatars", "users")
+    available_avatars = sorted(
+        [
+            f
+            for f in os.listdir(avatar_dir)
+            if f.lower().endswith((".png", ".jpg", ".jpeg", ".gif"))
+        ]
+    )
 
     return render(
         request,
         "accounts/profile_edit.html",
         {
             "form": form,
-            "profile": profile,
+            "profile": target_profile,  
             "setup_mode": False,
             "available_avatars": available_avatars,
         },
     )
+
+
+
+@login_required
+@transaction.atomic
+def add_child(request):
+    """
+    Allow an approved Parent to create a Child user within their family.
+
+    - Child gets User + Profile(role=Child, family = parent's family, is_approved=True).
+    - Email is optional; username is used for login.
+    - Ex-parents or non-parents cannot use this view.
+    """
+    parent_profile = request.user.profile
+
+    # Must be a parent with a family (and, by our earlier logic, already approved)
+    if not parent_profile.is_parent:
+        raise Http404("Only parents can add children.")
+    if not parent_profile.family:
+        messages.error(request, "You must have a family set up before adding children.")
+        return redirect("accounts:profile_setup")
+
+    if request.method == "POST":
+        form = ChildCreateForm(request.POST)
+        if form.is_valid():
+            # --- 1. Create the child User ---
+            child_user = form.save(commit=False)
+            child_user.first_name = form.cleaned_data["first_name"]
+            child_user.last_name = form.cleaned_data["last_name"]
+            # Email is optional; it's OK if it's blank
+            child_user.email = form.cleaned_data.get("email", "") or ""
+            child_user.save()  # will trigger the User post_save signal (profile creation + email, for now)
+
+            # --- 2. Configure the child's Profile ---
+            child_profile, _ = Profile.objects.get_or_create(user=child_user)
+            child_profile.role = Profile.ROLE_CHILD
+            child_profile.family = parent_profile.family
+            # Children do NOT require admin approval
+            child_profile.is_approved = True
+            child_profile.save()
+
+            messages.success(
+                request,
+                f"Child account created for {child_user.get_full_name() or child_user.username}."
+            )
+            return redirect("accounts:profile_detail", username=child_user.username)
+    else:
+        form = ChildCreateForm()
+
+    return render(request, "accounts/add_child.html", {"form": form, "parent_profile": parent_profile})
+
 
 
 
@@ -272,6 +417,7 @@ def profile_detail(request, username):
     return render(request, "accounts/profile_detail.html", context)
 
 
+
 @login_required
 def profile_list(request):
     viewer_profile = get_object_or_404(Profile, user=request.user)
@@ -285,6 +431,55 @@ def profile_list(request):
     )
     return render(request, "accounts/profile_list.html", {"profiles": profiles, "viewer_profile": viewer_profile})
 
+
+
+@login_required
+@transaction.atomic
+def add_child(request):
+    """
+    Allow an approved Parent to create a Child user within their family.
+
+    - Child gets User + Profile(role=Child, family = parent's family, is_approved=True).
+    - Email is optional; username is used for login.
+    - Ex-parents or non-parents cannot use this view.
+    """
+    parent_profile = request.user.profile
+
+    # Must be a parent with a family (and, by our earlier logic, already approved)
+    if not parent_profile.is_parent:
+        raise Http404("Only parents can add children.")
+    if not parent_profile.family:
+        messages.error(request, "You must have a family set up before adding children.")
+        return redirect("accounts:profile_setup")
+
+    if request.method == "POST":
+        form = ChildCreateForm(request.POST)
+        if form.is_valid():
+            # --- 1. Create the child User ---
+            child_user = form.save(commit=False)
+            child_user.first_name = form.cleaned_data["first_name"]
+            child_user.last_name = form.cleaned_data["last_name"]
+            # Email is optional; it's OK if it's blank
+            child_user.email = form.cleaned_data.get("email", "") or ""
+            child_user.save()  # will trigger the User post_save signal (profile creation + email, for now)
+
+            # --- 2. Configure the child's Profile ---
+            child_profile, _ = Profile.objects.get_or_create(user=child_user)
+            child_profile.role = Profile.ROLE_CHILD
+            child_profile.family = parent_profile.family
+            # Children do NOT require admin approval
+            child_profile.is_approved = True
+            child_profile.save()
+
+            messages.success(
+                request,
+                f"Child account created for {child_user.get_full_name() or child_user.username}."
+            )
+            return redirect("accounts:profile_detail", username=child_user.username)
+    else:
+        form = ChildCreateForm()
+
+    return render(request, "accounts/add_child.html", {"form": form, "parent_profile": parent_profile})
 
 # ---------------------------
 # Account settings (user fields only; kept for parity)
@@ -303,9 +498,9 @@ def account_settings(request):
     return render(request, "accounts/account_settings.html", {"form": form})
 
 
-# ---------------------------
+# ------------------------------------
 # Admin-only in-app Family management
-# ---------------------------
+# ------------------------------------
 
 @user_passes_test(_is_admin)
 def family_manage_list(request):

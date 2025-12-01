@@ -1,5 +1,5 @@
 from django import forms
-from .models import WishlistItem
+from .models import BoardPost, BoardComment, WishlistItem
 
 
 class WishlistItemForm(forms.ModelForm):
@@ -28,4 +28,28 @@ class WishlistItemForm(forms.ModelForm):
             "image": forms.ClearableFileInput(
                 attrs={"class": "form-control"}
             ),
+        }
+
+
+
+
+
+
+
+class BoardPostForm(forms.ModelForm):
+    class Meta:
+        model = BoardPost
+        fields = ["title", "body"]
+        widgets = {
+            "title": forms.TextInput(attrs={"class": "form-control"}),
+            "body": forms.Textarea(attrs={"class": "form-control", "rows": 4}),
+        }
+
+
+class BoardCommentForm(forms.ModelForm):
+    class Meta:
+        model = BoardComment
+        fields = ["body"]
+        widgets = {
+            "body": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }

@@ -40,7 +40,6 @@
           {% endif %}
         </h2>
 
-                {# Buttons when viewing YOUR OWN profile #}
         {% if request.user == target_user %}
           <div class="mt-2 d-flex flex-wrap gap-2">
             <a class="btn btn-sm btn-outline-secondary" href="{% url 'accounts:profile_edit' %}">
@@ -52,28 +51,10 @@
             <a class="btn btn-sm btn-outline-secondary" href="{% url 'accounts:password_change' %}">
               <i class="fa-solid fa-key me-1"></i> Change Password
             </a>
-            {% if viewer_profile.is_parent and viewer_profile.family %}
-              <a class="btn btn-sm btn-outline-primary" href="{% url 'accounts:add_child' %}">
-                <i class="fa-solid fa-user-plus me-1"></i> Add Child
-              </a>
-            {% endif %}
           </div>
+        {% endif %}
 
-        {# Buttons when a PARENT is viewing a CHILD they are allowed to edit #}
-          {% elif can_edit_wishlist and target_profile.role == "Child" %}
-            <div class="mt-2 d-flex flex-wrap gap-2">
-              <a class="btn btn-sm btn-outline-secondary"
-                href="{% url 'accounts:profile_edit' %}?child={{ target_user.username }}">
-                <i class="fa-solid fa-pen-to-square me-1"></i> Edit Child's Profile
-              </a>
-            </div>
-          {% endif %}
-
-
-        <div class="text-muted small mt-3">
-          {% if target_profile.family %}
-            <div><strong>Family:</strong> {{ target_profile.family.display_name }}</div>
-          {% endif %}
+        <div class="text-muted small">
           {% if target_profile.birthday %}
             <div><strong>Birthday:</strong> {{ target_profile.birthday }}</div>
           {% endif %}
@@ -114,13 +95,7 @@
           {{ target_profile.shoe_size|default:"—" }}
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Likes / Hobbies / Favorites -->
-  <div class="card mb-4">
-    <div class="card-header">Likes &amp; Favorites</div>
-    <div class="card-body small">
       {% if target_profile.hobbies_sports %}
         <div class="mb-2">
           <strong>Hobbies / Sports:</strong><br />
@@ -146,6 +121,7 @@
 
   <!-- Wishlist -->
   <div class="card mb-5">
+
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
       <span>Wishlist</span>
 
@@ -161,6 +137,7 @@
     </div>
 
     <div class="card-body small">
+
       {% if wishlist_items %}
         <ul class="list-group list-group-flush">
 
@@ -198,7 +175,7 @@
                     <div class="text-muted">{{ item.description }}</div>
                   {% endif %}
 
-                  <!-- View / Buy + detail view -->
+                  <!-- View / Buy + NEW DETAIL VIEW LINK -->
                   <div class="mt-2 d-flex flex-wrap gap-2">
 
                     {% if item.link %}
@@ -212,13 +189,12 @@
                       </a>
                     {% endif %}
 
-                    <!-- Detail page -->
+                    <!-- NEW: View detail page -->
                     <a
                       href="{% url 'gifter:wishlist_item_detail' pk=item.pk %}"
                       class="btn btn-sm btn-emphasis">
                       <i class="fa-solid fa-eye me-1"></i> View
                     </a>
-
                   </div>
 
                   {% if can_view_purchase_info %}

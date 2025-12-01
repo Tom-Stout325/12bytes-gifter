@@ -6,11 +6,27 @@ from django.contrib.auth.models import User
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
-from accounts.models import Family, Profile
 from accounts.utils import ensure_profile
-from .forms import WishlistItemForm
-from .models import WishlistItem
+from django.urls import reverse_lazy, reverse
+
+
+from django.views.generic import (
+    ListView,
+    DetailView,
+    CreateView,
+    UpdateView,
+    DeleteView,
+)
+from .forms import WishlistItemForm, BoardPostForm, BoardCommentForm
+from .models import WishlistItem, BoardPost, BoardComment
+from accounts.models import Family, Profile
+
+
+
+
+
 
 
 # ---------------------------
@@ -561,3 +577,182 @@ def wishlist_item_detail(request, pk):
         "can_edit_wishlist": viewer_profile.can_edit_profile(target_profile),
     }
     return render(request, "gifter/wishlist_item_detail.html", context)
+
+
+
+
+
+# ---------------------------------------------------------------------
+# Board permissions helpers
+# ---------------------------------------------------------------------
+def user_can_edit_post(user, post: BoardPost) -> bool:
+    return user.is_authenticated and (user == post.author or user.is_staff)
+
+
+def user_can_edit_comment(user, comment: BoardComment) -> bool:
+    return user.is_authenticated and (user == comment.author or user.is_staff)
+
+
+# ---------------------------------------------------------------------
+# Board post views
+# ---------------------------------------------------------------------
+class BoardPostListView(LoginRequiredMixin, ListView):
+    """
+    Global board: show posts from the last 30 days, newest first.
+    """
+    model = BoardPost
+    template_name = "gifter/board_list.html"
+    context_object_name = "posts"
+    paginate_by = 10
+
+    def get_queryset(self):
+        cutoff = timezone.now() - timedelta(days=30)
+        return BoardPost.objects.filter(created_at__gte=cutoff).select_related("author")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["archive_mode"] = False
+        return ctx
+
+
+class BoardPostArchiveView(LoginRequiredMixin, ListView):
+    """
+    Archive view: posts older than 30 days.
+    """
+    model = BoardPost
+    template_name = "gifter/board_list.html"
+    context_object_name = "posts"
+    paginate_by = 10
+
+    def get_queryset(self):
+        cutoff = timezone.now() - timedelta(days=30)
+        return BoardPost.objects.filter(created_at__lt=cutoff).select_related("author")
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["archive_mode"] = True
+        return ctx
+
+
+class BoardPostDetailView(LoginRequiredMixin, DetailView):
+    model = BoardPost
+    template_name = "gifter/board_detail.html"
+    context_object_name = "post"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        post = self.object
+        ctx["comments"] = post.comments.select_related("author")
+        ctx["comment_form"] = BoardCommentForm()
+        ctx["can_edit_post"] = user_can_edit_post(self.request.user, post)
+        return ctx
+
+
+class BoardPostCreateView(LoginRequiredMixin, CreateView):
+    model = BoardPost
+    form_class = BoardPostForm
+    template_name = "gifter/board_form.html"
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        messages.success(self.request, "Announcement posted.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("gifter:board_detail", args=[self.object.pk])
+
+
+class BoardPostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = BoardPost
+    form_class = BoardPostForm
+    template_name = "gifter/board_form.html"
+
+    def test_func(self):
+        post = self.get_object()
+        return user_can_edit_post(self.request.user, post)
+
+    def handle_no_permission(self):
+        messages.error(self.request, "You do not have permission to edit this post.")
+        return redirect("gifter:board_detail", pk=self.get_object().pk)
+
+    def form_valid(self, form):
+        messages.success(self.request, "Announcement updated.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse("gifter:board_detail", args=[self.object.pk])
+
+
+class BoardPostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = BoardPost
+    template_name = "gifter/board_confirm_delete.html"
+    success_url = reverse_lazy("gifter:board_list")
+
+    def test_func(self):
+        post = self.get_object()
+        return user_can_edit_post(self.request.user, post)
+
+    def handle_no_permission(self):
+        messages.error(self.request, "You do not have permission to delete this post.")
+        return redirect("gifter:board_detail", pk=self.get_object().pk)
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Announcement deleted.")
+        return super().delete(request, *args, **kwargs)
+
+
+# ---------------------------------------------------------------------
+# Comment views (function-based for simplicity)
+# ---------------------------------------------------------------------
+@login_required
+def board_comment_create(request, post_id):
+    post = get_object_or_404(BoardPost, pk=post_id)
+
+    if request.method == "POST":
+        form = BoardCommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.post = post
+            comment.author = request.user
+            comment.save()
+            messages.success(request, "Comment added.")
+    return redirect("gifter:board_detail", pk=post.pk)
+
+
+@login_required
+def board_comment_update(request, pk):
+    comment = get_object_or_404(BoardComment, pk=pk)
+
+    if not user_can_edit_comment(request.user, comment):
+        messages.error(request, "You do not have permission to edit this comment.")
+        return redirect("gifter:board_detail", pk=comment.post.pk)
+
+    if request.method == "POST":
+        form = BoardCommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Comment updated.")
+            return redirect("gifter:board_detail", pk=comment.post.pk)
+    else:
+        form = BoardCommentForm(instance=comment)
+
+    return render(
+        request,
+        "gifter/board_comment_form.html",
+        {"form": form, "comment": comment},
+    )
+
+
+@login_required
+def board_comment_delete(request, pk):
+    comment = get_object_or_404(BoardComment, pk=pk)
+
+    if not user_can_edit_comment(request.user, comment):
+        messages.error(request, "You do not have permission to delete this comment.")
+        return redirect("gifter:board_detail", pk=comment.post.pk)
+
+    post_pk = comment.post.pk
+    if request.method == "POST":
+        comment.delete()
+        messages.success(request, "Comment deleted.")
+    return redirect("gifter:board_detail", pk=post_pk)

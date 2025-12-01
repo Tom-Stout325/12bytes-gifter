@@ -1,0 +1,47 @@
+{% extends "index.html" %}
+{% load static %}
+
+{% block title %}
+  {% if object %}Edit Announcement | Gifter{% else %}New Announcement | Gifter{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 700px;">
+  <h2 class="h4 text-secondary mb-3 text-center">
+    {% if object %}Edit Announcement{% else %}New Announcement{% endif %}
+  </h2>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    <div class="mb-3">
+      <label class="form-label">Title</label>
+      {{ form.title }}
+      {{ form.title.errors }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Message</label>
+      {{ form.body }}
+      {{ form.body.errors }}
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">
+      {% if object %}Save Changes{% else %}Post Announcement{% endif %}
+    </button>
+
+    <p class="text-center mt-3 mb-0">
+      <a href="{% if object %}{% url 'gifter:board_detail' pk=object.pk %}{% else %}{% url 'gifter:board_list' %}{% endif %}"
+         class="text-muted">
+        Cancel
+      </a>
+    </p>
+  </form>
+</div>
+{% endblock %}

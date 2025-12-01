@@ -1,0 +1,28 @@
+{% extends "index.html" %}
+{% load static %}
+
+{% block title %}Delete Announcement | Gifter{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 600px;">
+  <div class="card">
+    <div class="card-body">
+      <h2 class="h5 text-danger mb-3">Delete Announcement</h2>
+      <p>
+        Are you sure you want to delete this announcement?
+      </p>
+      <p class="fw-semibold">"{{ object.title }}"</p>
+
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">
+          Yes, delete it
+        </button>
+        <a href="{% url 'gifter:board_detail' pk=object.pk %}" class="btn btn-secondary ms-2">
+          Cancel
+        </a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

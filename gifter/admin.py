@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import WishlistItem
+from .models import WishlistItem, BoardPost, BoardComment
+
+
+
 
 
 @admin.register(WishlistItem)
@@ -80,3 +83,18 @@ class WishlistItemAdmin(admin.ModelAdmin):
             return u.get_full_name() or u.username
         return ""
     purchased_by_user.short_description = "Purchased By"
+
+
+
+@admin.register(BoardPost)
+class BoardPostAdmin(admin.ModelAdmin):
+    list_display = ("title", "author", "created_at")
+    list_filter = ("created_at", "author")
+    search_fields = ("title", "body", "author__username", "author__first_name", "author__last_name")
+
+
+@admin.register(BoardComment)
+class BoardCommentAdmin(admin.ModelAdmin):
+    list_display = ("post", "author", "created_at")
+    list_filter = ("created_at", "author")
+    search_fields = ("body", "author__username", "author__first_name", "author__last_name", "post__title")

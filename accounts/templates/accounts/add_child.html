@@ -1,0 +1,70 @@
+{% extends "index.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Add Child | Gifter{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4" style="max-width: 600px;">
+
+  <h2 class="h4 mb-2 text-secondary text-center">Add a Child</h2>
+  <p class="text-muted small text-center mb-4">
+    Create a login for your child so they can view wishlists and update their own profile.
+    Email is optional; they can sign in with their username.
+  </p>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            {{ form.first_name|as_crispy_field }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.last_name|as_crispy_field }}
+          </div>
+        </div>
+
+        <div class="mb-3">
+          {{ form.username|as_crispy_field }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.email|as_crispy_field }}
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            {{ form.password1|as_crispy_field }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.password2|as_crispy_field }}
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">
+          Create Child Account
+        </button>
+      </form>
+
+      <p class="text-center mt-3 mb-0">
+        <a href="{% url 'accounts:profile_detail' username=request.user.username %}" class="text-muted">
+          ← Back to my profile
+        </a>
+      </p>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}

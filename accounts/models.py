@@ -226,12 +226,42 @@ class Profile(models.Model):
     def can_edit_profile(self, target: "Profile") -> bool:
         """
         Who can add/edit wishlist items for a target?
-        - Parents can edit anyone in the system (adjust if you want to restrict to family)
-        - A user can edit their own profile
+
+        - A user can always edit their own profile.
+        - A core parent (family.parent1 or family.parent2) can edit Child profiles
+          that belong to the same family.
+        - Other parents (ex-spouses, grandparents in other families, etc.)
+          are view-only for others.
         """
-        if self.is_parent:
+        # Always can edit yourself
+        if self.user_id == target.user_id:
             return True
-        return self.user_id == target.user_id
+
+        # Only parents can ever edit someone else
+        if not self.is_parent:
+            return False
+
+        # Must have a family to manage children
+        family = self.family
+        if not family:
+            return False
+
+        # Must be a core parent (parent1 or parent2) of this family
+        is_core_parent = (
+            family.parent1_id == self.user_id
+            or family.parent2_id == self.user_id
+        )
+        if not is_core_parent:
+            return False
+
+        # Only allow editing child profiles in the same family
+        if target.family_id != family.id:
+            return False
+        if target.role != self.ROLE_CHILD:
+            return False
+
+        return True
+
 
     # ---- Dates: age / years married ----
     def age(self, today: date | None = None) -> int | None:

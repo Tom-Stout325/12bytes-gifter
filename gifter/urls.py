@@ -31,4 +31,16 @@ urlpatterns = [
     path("family/upcoming/", views.family_upcoming, name="family_upcoming"),
     path("families/", views.all_families, name="all_families"),
     path("families/<slug:slug>/", views.family_detail, name="family_detail"),
+    
+    # Message Board
+    path("board/", views.BoardPostListView.as_view(), name="board_list"),
+    path("board/archive/", views.BoardPostArchiveView.as_view(), name="board_archive"),
+    path("board/new/", views.BoardPostCreateView.as_view(), name="board_create"),
+    path("board/<int:pk>/", views.BoardPostDetailView.as_view(), name="board_detail"),
+    path("board/<int:pk>/edit/", views.BoardPostUpdateView.as_view(), name="board_update"),
+    path("board/<int:pk>/delete/", views.BoardPostDeleteView.as_view(), name="board_delete"),
+
+    path("board/<int:post_id>/comments/new/", views.board_comment_create, name="board_comment_create"),
+    path("board/comments/<int:pk>/edit/", views.board_comment_update, name="board_comment_update"),
+    path("board/comments/<int:pk>/delete/", views.board_comment_delete, name="board_comment_delete"),
 ]

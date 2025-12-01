@@ -5,59 +5,94 @@
 {% block title %}Register | Gifter{% endblock %}
 
 {% block content %}
+
+<!-- Logo -->
 <div class="text-center mt-4">
-  <img src="{% static 'images/logo.png' %}" alt="Gifter Logo"
-        class="img-fluid mx-auto d-block mb-3" style="max-width: 300px" />
+  <img
+    src="{% static 'images/logo.png' %}"
+    alt="Gifter Logo"
+    class="img-fluid mx-auto d-block mb-3"
+    style="max-width: 300px;"
+  />
 </div>
-<div class="container mt-5" style="max-width: 500px;">
-  <h2 class="mb-4 text-center text-secondary">Create an Account</h2>
 
-  <form method="POST" novalidate>
-    {% csrf_token %}
-    {{ form.non_field_errors }}
+<div class="container mt-5" style="max-width: 600px;">
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-4 p-md-5">
 
-    <div class="mb-3">
-      <label class="form-label">First Name</label>
-      {{ form.first_name }}
-      {{ form.first_name.errors }}
+      <h2 class="mb-2 text-center text-secondary">Create Your Parent Account</h2>
+      <p class="text-muted small text-center mb-4">
+        Register as a parent, connect to your family, and then add your children’s profiles.
+        Your account will be <strong>pending admin approval</strong> before you can manage family members.
+      </p>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <!-- Name row -->
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            {{ form.first_name|as_crispy_field }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.last_name|as_crispy_field }}
+          </div>
+        </div>
+
+        <!-- Username + email -->
+        <div class="mb-3">
+          {{ form.username|as_crispy_field }}
+        </div>
+        <div class="mb-3">
+          {{ form.email|as_crispy_field }}
+        </div>
+
+        <!-- Passwords -->
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            {{ form.password1|as_crispy_field }}
+          </div>
+          <div class="col-md-6 mb-3">
+            {{ form.password2|as_crispy_field }}
+          </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <!-- Family section -->
+        <h5 class="mb-2">Family Setup</h5>
+        <p class="text-muted small mb-3">
+          Choose whether you want to create a brand-new family or join an existing one.
+          The family name is how your household will appear in Gifter
+          (for example: <em>Tom &amp; Leslie</em>, <em>Grandma Susan</em>, or <em>The Rivera Household</em>).
+        </p>
+
+        <div class="mb-3">
+          {{ form.new_family_name|as_crispy_field }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.existing_family|as_crispy_field }}
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 mt-2">
+          Create Account
+        </button>
+      </form>
+
+      <p class="text-center mt-3 mb-0">
+        Already have an account?
+        <a href="{% url 'accounts:login' %}" class="text-primary">Login here</a>
+      </p>
+
     </div>
-
-    <div class="mb-3">
-      <label class="form-label">Last Name</label>
-      {{ form.last_name }}
-      {{ form.last_name.errors }}
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label">Username</label>
-      {{ form.username }}
-      {{ form.username.errors }}
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label">Email</label>
-      {{ form.email }}
-      {{ form.email.errors }}
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label">Password</label>
-      {{ form.password }}
-      {{ form.password.errors }}
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label">Confirm Password</label>
-      {{ form.confirm_password }}
-      {{ form.confirm_password.errors }}
-    </div>
-
-    <button type="submit" class="btn btn-primary w-100">Register</button>
-  </form>
-
-  <p class="text-center mt-3">
-    Already have an account?
-    <a href="{% url 'accounts:login' %}" class="text-primary">Login here</a>
-  </p>
+  </div>
 </div>
+
 {% endblock %}
