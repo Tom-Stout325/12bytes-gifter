@@ -43,4 +43,8 @@ urlpatterns = [
     path("board/<int:post_id>/comments/new/", views.board_comment_create, name="board_comment_create"),
     path("board/comments/<int:pk>/edit/", views.board_comment_update, name="board_comment_update"),
     path("board/comments/<int:pk>/delete/", views.board_comment_delete, name="board_comment_delete"),
+    
+     # Calendar
+    path("calendar/", views.calendar_view, name="calendar_current"),
+    path("calendar/<int:year>/<int:month>/", views.calendar_view, name="calendar_month"),
 ]

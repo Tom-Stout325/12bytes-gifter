@@ -1,0 +1,144 @@
+{% extends "index.html" %}
+{% load static %}
+
+{% block title %}Family Calendar | Gifter{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 900px;">
+
+  <!-- Header + navigation -->
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div class="d-flex flex-column">
+      <h2 class="h4 text-secondary mb-0">Family Calendar</h2>
+      <span class="text-muted small">{{ month_label }}</span>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{% url 'gifter:calendar_month' year=prev_year month=prev_month %}"
+         class="btn btn-sm btn-outline-secondary">
+        ← Previous
+      </a>
+      <a href="{% url 'gifter:calendar_current' %}"
+         class="btn btn-sm btn-outline-secondary">
+        Today
+      </a>
+      <a href="{% url 'gifter:calendar_month' year=next_year month=next_month %}"
+         class="btn btn-sm btn-outline-secondary">
+        Next →
+      </a>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="mb-3 small text-muted">
+    <span class="me-3">
+      <span class="badge bg-light text-dark border me-1">🎂</span> Birthday
+    </span>
+    <span class="me-3">
+      <span class="badge bg-light text-dark border me-1">💍</span> Anniversary
+    </span>
+    <span class="me-3">
+      <span class="badge bg-light text-dark border me-1">📢</span> Announcement
+    </span>
+  </div>
+
+  <!-- Calendar grid -->
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle text-center small mb-4">
+      <thead class="table-light">
+        <tr>
+          <th scope="col">Mon</th>
+          <th scope="col">Tue</th>
+          <th scope="col">Wed</th>
+          <th scope="col">Thu</th>
+          <th scope="col">Fri</th>
+          <th scope="col">Sat</th>
+          <th scope="col">Sun</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for week in weeks %}
+          <tr>
+            {% for cell in week %}
+              {% with d=cell.date events=cell.events in_month=cell.in_current_month %}
+              <td class="p-1"
+                  style="vertical-align: top;
+                         {% if not in_month %}background-color: #f8f9fa; color: #adb5bd;{% endif %}">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="fw-semibold">
+                    {{ d.day }}
+                  </span>
+                  {% if d == today %}
+                    <span class="badge bg-primary">Today</span>
+                  {% endif %}
+                </div>
+
+                {% if events %}
+                  <ul class="list-unstyled mb-0 text-start">
+                    {% for e in events %}
+                      <li class="mb-1">
+                        {% if e.type == "birthday" %}
+                          <span class="badge bg-light text-dark border me-1">🎂</span>
+                          <span>{{ e.label }}</span>
+                        {% elif e.type == "anniversary" %}
+                          <span class="badge bg-light text-dark border me-1">💍</span>
+                          <span>{{ e.label }}</span>
+                        {% elif e.type == "announcement" %}
+                          <span class="badge bg-light text-dark border me-1">📢</span>
+                          {% if e.post %}
+                            <a href="{% url 'gifter:board_detail' pk=e.post.pk %}">
+                              {{ e.label|truncatechars:30 }}
+                            </a>
+                          {% else %}
+                            <span>{{ e.label|truncatechars:30 }}</span>
+                          {% endif %}
+                        {% endif %}
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </td>
+              {% endwith %}
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Optional: summary list for mobile users -->
+  <div class="d-md-none">
+    <h3 class="h6 text-secondary mb-2">This month’s events</h3>
+    {% with any_events=False %}
+      {% for week in weeks %}
+        {% for cell in week %}
+          {% if cell.in_current_month and cell.events %}
+            {% if not any_events %}{% with True as any_events %}{% endwith %}{% endif %}
+            <div class="mb-2">
+              <div class="fw-semibold">
+                {{ cell.date|date:"M j" }}
+              </div>
+              <ul class="list-unstyled mb-0 small">
+                {% for e in cell.events %}
+                  <li>
+                    {% if e.type == "birthday" %}🎂{% elif e.type == "anniversary" %}💍{% else %}📢{% endif %}
+                    {% if e.type == "announcement" and e.post %}
+                      <a href="{% url 'gifter:board_detail' pk=e.post.pk %}">
+                        {{ e.label }}
+                      </a>
+                    {% else %}
+                      {{ e.label }}
+                    {% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+      {% if not any_events %}
+        <p class="text-muted small">No events this month yet.</p>
+      {% endif %}
+    {% endwith %}
+  </div>
+</div>
+{% endblock %}

@@ -7,7 +7,7 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-
+import calendar
 from accounts.utils import ensure_profile
 from django.urls import reverse_lazy, reverse
 
@@ -756,3 +756,141 @@ def board_comment_delete(request, pk):
         comment.delete()
         messages.success(request, "Comment deleted.")
     return redirect("gifter:board_detail", pk=post_pk)
+
+
+
+@login_required
+def calendar_view(request, year=None, month=None):
+    """
+    Global family calendar:
+    - Birthdays (from Profile.birthday, recurring yearly)
+    - Anniversaries (from Profile.anniversary, recurring yearly)
+    - Announcements (from BoardPost.created_at for that month/year)
+    """
+
+    today = timezone.localdate()
+
+    # Resolve year/month (default: current month)
+    if year is None or month is None:
+        year = today.year
+        month = today.month
+    else:
+        year = int(year)
+        month = int(month)
+
+    # Clamp month/year into valid ranges if needed
+    if month < 1:
+        month = 1
+    if month > 12:
+        month = 12
+
+    # Build a calendar grid for the month (weeks × days)
+    cal = calendar.Calendar(firstweekday=0)  # 0 = Monday, change to 6 if you want Sunday
+    month_dates = list(cal.itermonthdates(year, month))
+    # month_dates will include dates from previous/next month to fill weeks
+
+    # Compute prev/next month for navigation
+    if month == 1:
+        prev_month = 12
+        prev_year = year - 1
+    else:
+        prev_month = month - 1
+        prev_year = year
+
+    if month == 12:
+        next_month = 1
+        next_year = year + 1
+    else:
+        next_month = month + 1
+        next_year = year
+
+    # --- Collect events ---
+
+    # Birthdays & anniversaries: recurring yearly
+    profiles_with_bday = Profile.objects.filter(birthday__isnull=False)
+    profiles_with_ann = Profile.objects.filter(anniversary__isnull=False)
+
+    # Map: date -> list of event dicts
+    events_by_date = {}
+
+    # Helper to add an event
+    def add_event(d, event_type, label, profile=None, post=None):
+        events_by_date.setdefault(d, []).append(
+            {
+                "type": event_type,   # "birthday", "anniversary", "announcement"
+                "label": label,
+                "profile": profile,
+                "post": post,
+            }
+        )
+
+    # Birthdays
+    for p in profiles_with_bday:
+        if p.birthday.month == month:
+            event_date = date(year, month, p.birthday.day)
+            name = p.user.get_full_name() or p.user.username
+            add_event(
+                event_date,
+                "birthday",
+                f"{name}'s birthday",
+                profile=p,
+            )
+
+    # Anniversaries
+    for p in profiles_with_ann:
+        if p.anniversary.month == month:
+            event_date = date(year, month, p.anniversary.day)
+            name = p.user.get_full_name() or p.user.username
+            add_event(
+                event_date,
+                "anniversary",
+                f"{name}'s anniversary",
+                profile=p,
+            )
+
+    # Announcements (BoardPost.created_at in this year/month)
+    posts = (
+        BoardPost.objects.filter(
+            created_at__year=year,
+            created_at__month=month,
+        )
+        .select_related("author")
+    )
+    for post in posts:
+        event_date = post.created_at.date()
+        add_event(
+            event_date,
+            "announcement",
+            post.title,
+            post=post,
+        )
+
+    # Build a grid grouped by week (list of weeks, each week = list of (date, events) tuples)
+    weeks = []
+    week = []
+    for d in month_dates:
+        # Only show events for the exact date key
+        day_events = events_by_date.get(d, [])
+        week.append({"date": d, "events": day_events, "in_current_month": d.month == month})
+        if len(week) == 7:
+            weeks.append(week)
+            week = []
+    if week:
+        weeks.append(week)
+
+    # Month label
+    month_label = date(year, month, 1).strftime("%B %Y")
+
+    context = {
+        "weeks": weeks,
+        "year": year,
+        "month": month,
+        "month_label": month_label,
+        "today": today,
+        "prev_year": prev_year,
+        "prev_month": prev_month,
+        "next_year": next_year,
+        "next_month": next_month,
+    }
+
+    return render(request, "gifter/calendar.html", context)
