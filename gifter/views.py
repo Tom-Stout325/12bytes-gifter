@@ -824,29 +824,49 @@ def calendar_view(request, year=None, month=None):
             }
         )
 
+
+    # Helper to get a short display name (first name fallback)
+    def short_name(profile: Profile) -> str:
+        user = profile.user
+        if user.first_name:
+            return user.first_name
+        full = user.get_full_name() or user.username
+        return full.split()[0] if full else ""
+
     # Birthdays
+      # Birthdays (recurring yearly, first name only)
     for p in profiles_with_bday:
         if p.birthday.month == month:
             event_date = date(year, month, p.birthday.day)
-            name = p.user.get_full_name() or p.user.username
+            label = short_name(p)
+            if not label:
+                label = "Birthday"
             add_event(
                 event_date,
                 "birthday",
-                f"{name}'s birthday",
+                label,
                 profile=p,
             )
+
 
     # Anniversaries
     for p in profiles_with_ann:
         if p.anniversary.month == month:
             event_date = date(year, month, p.anniversary.day)
-            name = p.user.get_full_name() or p.user.username
+
+            # Prefer the family display name (e.g. "Tom & Leslie") for parents
+            if p.family and p.role == Profile.ROLE_PARENT and p.family.display_name:
+                label = p.family.display_name
+            else:
+                label = short_name(p) or "Anniversary"
+
             add_event(
                 event_date,
                 "anniversary",
-                f"{name}'s anniversary",
+                label,
                 profile=p,
             )
+
 
     # Announcements (BoardPost.created_at in this year/month)
     posts = (

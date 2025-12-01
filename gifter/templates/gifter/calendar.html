@@ -4,13 +4,50 @@
 {% block title %}Family Calendar | Gifter{% endblock %}
 
 {% block content %}
+<style>
+  /* Calendar layout */
+  .calendar-table {
+    table-layout: fixed;
+  }
+  .calendar-day {
+    vertical-align: top;
+    height: 5.5rem;            /* fixed height for all days */
+    padding: 0.25rem;
+  }
+  .calendar-day-inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+  .calendar-day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.15rem;
+  }
+  .calendar-day-events {
+    overflow: hidden;
+  }
+  .calendar-day-events ul {
+    font-size: 0.75rem;
+  }
+  .calendar-day-events li {
+    max-width: 100%;
+  }
+  .calendar-day-muted {
+    background-color: #f8f9fa;
+    color: #adb5bd;
+  }
+</style>
+
 <div class="container mt-4" style="max-width: 900px;">
 
   <!-- Header + navigation -->
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <div class="d-flex flex-column">
       <h2 class="h4 text-secondary mb-0">Family Calendar</h2>
-      <span class="text-muted small">{{ month_label }}</span>
+      <span> <h1 class="text-primary">{{ month_label }}</h1></span>
     </div>
     <div class="d-flex flex-wrap gap-2">
       <a href="{% url 'gifter:calendar_month' year=prev_year month=prev_month %}"
@@ -43,7 +80,7 @@
 
   <!-- Calendar grid -->
   <div class="table-responsive">
-    <table class="table table-bordered align-middle text-center small mb-4">
+    <table class="table table-bordered align-middle text-center small mb-4 calendar-table">
       <thead class="table-light">
         <tr>
           <th scope="col">Mon</th>
@@ -60,43 +97,52 @@
           <tr>
             {% for cell in week %}
               {% with d=cell.date events=cell.events in_month=cell.in_current_month %}
-              <td class="p-1"
-                  style="vertical-align: top;
-                         {% if not in_month %}background-color: #f8f9fa; color: #adb5bd;{% endif %}">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                  <span class="fw-semibold">
-                    {{ d.day }}
-                  </span>
-                  {% if d == today %}
-                    <span class="badge bg-primary">Today</span>
-                  {% endif %}
-                </div>
+                <td class="calendar-day {% if not in_month %}calendar-day-muted{% endif %}">
+                  <div class="calendar-day-inner">
+                    <div class="calendar-day-header">
+                      <span class="fw-semibold">{{ d.day }}</span>
+                      {% if d == today %}
+                        <span class="badge bg-primary">Today</span>
+                      {% endif %}
+                    </div>
 
-                {% if events %}
-                  <ul class="list-unstyled mb-0 text-start">
-                    {% for e in events %}
-                      <li class="mb-1">
-                        {% if e.type == "birthday" %}
-                          <span class="badge bg-light text-dark border me-1">🎂</span>
-                          <span>{{ e.label }}</span>
-                        {% elif e.type == "anniversary" %}
-                          <span class="badge bg-light text-dark border me-1">💍</span>
-                          <span>{{ e.label }}</span>
-                        {% elif e.type == "announcement" %}
-                          <span class="badge bg-light text-dark border me-1">📢</span>
-                          {% if e.post %}
-                            <a href="{% url 'gifter:board_detail' pk=e.post.pk %}">
-                              {{ e.label|truncatechars:30 }}
-                            </a>
-                          {% else %}
-                            <span>{{ e.label|truncatechars:30 }}</span>
-                          {% endif %}
-                        {% endif %}
-                      </li>
-                    {% endfor %}
-                  </ul>
-                {% endif %}
-              </td>
+                    {% if events %}
+                      <div class="calendar-day-events">
+                        <ul class="list-unstyled mb-0 text-start">
+                          {% for e in events %}
+                            <li class="mb-1 text-truncate">
+                              {% if e.type == "birthday" %}
+                                <span class="me-1">🎂</span>
+                                <span class="text-truncate d-inline-block" style="max-width: 80%;">
+                                  {{ e.label }}
+                                </span>
+                              {% elif e.type == "anniversary" %}
+                                <span class="me-1">💍</span>
+                                <span class="text-truncate d-inline-block" style="max-width: 80%;">
+                                  {{ e.label }}
+                                </span>
+                              {% elif e.type == "announcement" %}
+                                <span class="me-1">📢</span>
+                                {% if e.post %}
+                                  <a
+                                    href="{% url 'gifter:board_detail' pk=e.post.pk %}"
+                                    class="text-truncate d-inline-block"
+                                    style="max-width: 80%;">
+                                    {{ e.label|truncatechars:20 }}
+                                  </a>
+                                {% else %}
+                                  <span class="text-truncate d-inline-block" style="max-width: 80%;">
+                                    {{ e.label|truncatechars:20 }}
+                                  </span>
+                                {% endif %}
+                              {% endif %}
+                            </li>
+                          {% endfor %}
+                        </ul>
+                      </div>
+                    {% endif %}
+                  </div>
+                </td>
               {% endwith %}
             {% endfor %}
           </tr>
@@ -105,14 +151,14 @@
     </table>
   </div>
 
-  <!-- Optional: summary list for mobile users -->
-  <div class="d-md-none">
+  <!-- Summary list (desktop + mobile) -->
+  <div class="mt-4">
     <h3 class="h6 text-secondary mb-2">This month’s events</h3>
-    {% with any_events=False %}
+
+    {% with has_events=False %}
       {% for week in weeks %}
         {% for cell in week %}
           {% if cell.in_current_month and cell.events %}
-            {% if not any_events %}{% with True as any_events %}{% endwith %}{% endif %}
             <div class="mb-2">
               <div class="fw-semibold">
                 {{ cell.date|date:"M j" }}
@@ -120,13 +166,19 @@
               <ul class="list-unstyled mb-0 small">
                 {% for e in cell.events %}
                   <li>
-                    {% if e.type == "birthday" %}🎂{% elif e.type == "anniversary" %}💍{% else %}📢{% endif %}
-                    {% if e.type == "announcement" and e.post %}
-                      <a href="{% url 'gifter:board_detail' pk=e.post.pk %}">
-                        {{ e.label }}
-                      </a>
+                    {% if e.type == "birthday" %}
+                      🎂 {{ e.label }}
+                    {% elif e.type == "anniversary" %}
+                      💍 {{ e.label }}
                     {% else %}
-                      {{ e.label }}
+                      📢
+                      {% if e.post %}
+                        <a href="{% url 'gifter:board_detail' pk=e.post.pk %}">
+                          {{ e.label }}
+                        </a>
+                      {% else %}
+                        {{ e.label }}
+                      {% endif %}
                     {% endif %}
                   </li>
                 {% endfor %}
@@ -135,10 +187,8 @@
           {% endif %}
         {% endfor %}
       {% endfor %}
-      {% if not any_events %}
-        <p class="text-muted small">No events this month yet.</p>
-      {% endif %}
     {% endwith %}
   </div>
+
 </div>
 {% endblock %}
