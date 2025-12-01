@@ -11,7 +11,7 @@
   }
   .calendar-day {
     vertical-align: top;
-    height: 5.5rem;            /* fixed height for all days */
+    height: 5.5rem;           /* fixed height for all days */
     padding: 0.25rem;
   }
   .calendar-day-inner {
@@ -47,7 +47,7 @@
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <div class="d-flex flex-column">
       <h2 class="h4 text-secondary mb-0">Family Calendar</h2>
-      <span> <h1 class="text-primary">{{ month_label }}</h1></span>
+      <span class="text-muted small">{{ month_label }}</span>
     </div>
     <div class="d-flex flex-wrap gap-2">
       <a href="{% url 'gifter:calendar_month' year=prev_year month=prev_month %}"
@@ -110,15 +110,15 @@
                       <div class="calendar-day-events">
                         <ul class="list-unstyled mb-0 text-start">
                           {% for e in events %}
-                            <li class="mb-1 text-truncate">
+                            <li class="mb-1">
                               {% if e.type == "birthday" %}
                                 <span class="me-1">🎂</span>
-                                <span class="text-truncate d-inline-block" style="max-width: 80%;">
+                                <span class="d-inline-block" style="max-width: 100%; white-space: normal; line-height: 1.1;">
                                   {{ e.label }}
                                 </span>
                               {% elif e.type == "anniversary" %}
                                 <span class="me-1">💍</span>
-                                <span class="text-truncate d-inline-block" style="max-width: 80%;">
+                                <span class="d-inline-block" style="max-width: 100%; white-space: normal; line-height: 1.1;">
                                   {{ e.label }}
                                 </span>
                               {% elif e.type == "announcement" %}
@@ -151,44 +151,47 @@
     </table>
   </div>
 
-  <!-- Summary list (desktop + mobile) -->
+    <!-- Summary list (desktop + mobile) -->
   <div class="mt-4">
     <h3 class="h6 text-secondary mb-2">This month’s events</h3>
 
-    {% with has_events=False %}
-      {% for week in weeks %}
-        {% for cell in week %}
-          {% if cell.in_current_month and cell.events %}
-            <div class="mb-2">
-              <div class="fw-semibold">
-                {{ cell.date|date:"M j" }}
-              </div>
-              <ul class="list-unstyled mb-0 small">
-                {% for e in cell.events %}
-                  <li>
-                    {% if e.type == "birthday" %}
-                      🎂 {{ e.label }}
-                    {% elif e.type == "anniversary" %}
-                      💍 {{ e.label }}
-                    {% else %}
-                      📢
-                      {% if e.post %}
-                        <a href="{% url 'gifter:board_detail' pk=e.post.pk %}">
-                          {{ e.label }}
-                        </a>
-                      {% else %}
-                        {{ e.label }}
-                      {% endif %}
-                    {% endif %}
-                  </li>
-                {% endfor %}
-              </ul>
+    {% for week in weeks %}
+      {% for cell in week %}
+        {% if cell.in_current_month and cell.events %}
+          <div class="mb-2">
+            <div class="fw-semibold">
+              {{ cell.date|date:"M j" }}
             </div>
-          {% endif %}
-        {% endfor %}
+            <ul class="list-unstyled mb-0 small">
+              {% for e in cell.events %}
+                <li>
+                  {% if e.type == "birthday" %}
+                    🎂 {{ e.label }}
+                  {% elif e.type == "anniversary" %}
+                    💍 {{ e.label }}
+                  {% else %}
+                    📢
+                    {% if e.post %}
+                      <a href="{% url 'gifter:board_detail' pk=e.post.pk %}">
+                        {{ e.label }}
+                      </a>
+                    {% else %}
+                      {{ e.label }}
+                    {% endif %}
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
       {% endfor %}
-    {% endwith %}
+    {% endfor %}
+
+    {% if not has_events %}
+      <p class="text-muted small mb-0">No events this month yet.</p>
+    {% endif %}
   </div>
+
 
 </div>
 {% endblock %}

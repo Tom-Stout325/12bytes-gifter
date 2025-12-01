@@ -759,18 +759,20 @@ def board_comment_delete(request, pk):
 
 
 
+
 @login_required
 def calendar_view(request, year=None, month=None):
     """
-    Global family calendar:
-    - Birthdays (from Profile.birthday, recurring yearly)
-    - Anniversaries (from Profile.anniversary, recurring yearly)
-    - Announcements (from BoardPost.created_at for that month/year)
+    Family calendar:
+    - Birthdays: 🎂 First name only
+    - Anniversaries:
+        * Parents with a Family: 💍 Family.display_name (e.g. "Tom & Leslie"), once per couple
+        * Others: 💍 First name
+    - Announcements: 📢 BoardPost title (current month only)
     """
-
     today = timezone.localdate()
 
-    # Resolve year/month (default: current month)
+    # Pick year / month
     if year is None or month is None:
         year = today.year
         month = today.month
@@ -778,139 +780,118 @@ def calendar_view(request, year=None, month=None):
         year = int(year)
         month = int(month)
 
-    # Clamp month/year into valid ranges if needed
-    if month < 1:
-        month = 1
-    if month > 12:
-        month = 12
-
-    # Build a calendar grid for the month (weeks × days)
-    cal = calendar.Calendar(firstweekday=0)  # 0 = Monday, change to 6 if you want Sunday
-    month_dates = list(cal.itermonthdates(year, month))
-    # month_dates will include dates from previous/next month to fill weeks
-
-    # Compute prev/next month for navigation
+    # Basic month navigation
     if month == 1:
-        prev_month = 12
-        prev_year = year - 1
+        prev_year, prev_month = year - 1, 12
     else:
-        prev_month = month - 1
-        prev_year = year
+        prev_year, prev_month = year, month - 1
 
     if month == 12:
-        next_month = 1
-        next_year = year + 1
+        next_year, next_month = year + 1, 1
     else:
-        next_month = month + 1
-        next_year = year
+        next_year, next_month = year, month + 1
 
-    # --- Collect events ---
+    month_label = date(year, month, 1).strftime("%B %Y")
 
-    # Birthdays & anniversaries: recurring yearly
-    profiles_with_bday = Profile.objects.filter(birthday__isnull=False)
-    profiles_with_ann = Profile.objects.filter(anniversary__isnull=False)
+    # ---- Collect events into a {date: [events]} dict ----
+    events_by_date: dict[date, list[dict]] = {}
 
-    # Map: date -> list of event dicts
-    events_by_date = {}
-
-    # Helper to add an event
-    def add_event(d, event_type, label, profile=None, post=None):
-        events_by_date.setdefault(d, []).append(
+    def add_event(dt: date, ev_type: str, label: str, **extra):
+        events_by_date.setdefault(dt, []).append(
             {
-                "type": event_type,   # "birthday", "anniversary", "announcement"
+                "type": ev_type,
                 "label": label,
-                "profile": profile,
-                "post": post,
+                **extra,
             }
         )
 
-
-    # Helper to get a short display name (first name fallback)
+    # Helper for short names
     def short_name(profile: Profile) -> str:
-        user = profile.user
-        if user.first_name:
-            return user.first_name
-        full = user.get_full_name() or user.username
-        return full.split()[0] if full else ""
+        u = profile.user
+        if u.first_name:
+            return u.first_name
+        full = u.get_full_name() or u.username
+        return (full.split()[0] if full else "") or "User"
 
-    # Birthdays
-      # Birthdays (recurring yearly, first name only)
+    # Profiles with birthdays/anniversaries
+    profiles_with_bday = Profile.objects.exclude(birthday__isnull=True)
+    profiles_with_ann = Profile.objects.exclude(anniversary__isnull=True)
+
+    # Birthdays (recurring yearly, first name only)
     for p in profiles_with_bday:
-        if p.birthday.month == month:
-            event_date = date(year, month, p.birthday.day)
-            label = short_name(p)
-            if not label:
-                label = "Birthday"
-            add_event(
-                event_date,
-                "birthday",
-                label,
-                profile=p,
-            )
+        if p.birthday.month != month:
+            continue
+        dt = date(year, month, p.birthday.day)
+        add_event(dt, "birthday", short_name(p), profile=p)
 
+    # Anniversaries (recurring yearly, deduped per couple/family)
+    seen_anniversaries = set()
 
-    # Anniversaries
     for p in profiles_with_ann:
-        if p.anniversary.month == month:
-            event_date = date(year, month, p.anniversary.day)
+        if p.anniversary.month != month:
+            continue
 
-            # Prefer the family display name (e.g. "Tom & Leslie") for parents
-            if p.family and p.role == Profile.ROLE_PARENT and p.family.display_name:
-                label = p.family.display_name
-            else:
-                label = short_name(p) or "Anniversary"
+        day = p.anniversary.day
 
-            add_event(
-                event_date,
-                "anniversary",
-                label,
-                profile=p,
-            )
+        if p.family and p.role == Profile.ROLE_PARENT:
+            # one entry per family + day
+            key = ("family", p.family_id, day)
+            label = p.family.display_name or short_name(p) or "Anniversary"
+        else:
+            key = ("profile", p.id, day)
+            label = short_name(p) or "Anniversary"
 
+        if key in seen_anniversaries:
+            continue
+        seen_anniversaries.add(key)
 
-    # Announcements (BoardPost.created_at in this year/month)
-    posts = (
-        BoardPost.objects.filter(
-            created_at__year=year,
-            created_at__month=month,
-        )
-        .select_related("author")
-    )
+        dt = date(year, month, day)
+        add_event(dt, "anniversary", label, profile=p)
+
+    # Announcements (BoardPost created in this month)
+    posts = BoardPost.objects.filter(
+        created_at__year=year,
+        created_at__month=month,
+    ).select_related("author")
+
     for post in posts:
-        event_date = post.created_at.date()
-        add_event(
-            event_date,
-            "announcement",
-            post.title,
-            post=post,
-        )
+        dt = post.created_at.date()
+        label = post.title or "Announcement"
+        add_event(dt, "announcement", label, post=post)
 
-    # Build a grid grouped by week (list of weeks, each week = list of (date, events) tuples)
+    # ---- Build calendar weeks with attached events ----
+    cal = calendar.Calendar(firstweekday=0)  # Monday=0 if you want
     weeks = []
-    week = []
-    for d in month_dates:
-        # Only show events for the exact date key
-        day_events = events_by_date.get(d, [])
-        week.append({"date": d, "events": day_events, "in_current_month": d.month == month})
-        if len(week) == 7:
-            weeks.append(week)
-            week = []
-    if week:
-        weeks.append(week)
-
-    # Month label
-    month_label = date(year, month, 1).strftime("%B %Y")
+    for week in cal.monthdatescalendar(year, month):
+        row = []
+        for day in week:
+            row.append(
+                {
+                    "date": day,
+                    "events": events_by_date.get(day, []),
+                    "in_current_month": (day.month == month),
+                }
+            )
+        weeks.append(row)
+    
+        has_events = any(
+            cell["events"]
+            for week in weeks
+            for cell in week
+            if cell["in_current_month"]
+        )
 
     context = {
-        "weeks": weeks,
+        "today": today,
         "year": year,
         "month": month,
         "month_label": month_label,
-        "today": today,
         "prev_year": prev_year,
         "prev_month": prev_month,
         "next_year": next_year,
         "next_month": next_month,
+        "weeks": weeks,
+        "has_events": has_events,
     }
 
     return render(request, "gifter/calendar.html", context)
